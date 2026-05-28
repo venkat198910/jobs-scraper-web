@@ -766,3 +766,22 @@ export async function getCareersFutureJobsCount(): Promise<number> {
   }
   return count ?? 0;
 }
+
+/**
+ * Gets the list of jobs which have a custom resume generated (customized_resume_id is not null).
+ * @returns A promise that resolves to an array of jobs with a custom resume.
+ */
+export async function getCustomResumeJobs(): Promise<Job[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("jobs")
+    .select("*")
+    .not("customized_resume_id", "is", null)
+    .eq("is_active", true); // Assuming active jobs
+
+  if (error) {
+    console.error("Supabase error (custom resume jobs):", error);
+    throw new Error(error.message);
+  }
+  return data ?? [];
+}
