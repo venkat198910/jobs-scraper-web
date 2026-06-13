@@ -775,7 +775,7 @@ export async function getCustomResumeJobs(): Promise<Job[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("jobs")
-    .select("*")
+    .select("*, customized_resumes(resume_link)")
     .not("customized_resume_id", "is", null)
     .eq("is_active", true); // Assuming active jobs
 

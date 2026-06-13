@@ -2,6 +2,7 @@ import { getJobById } from "@/lib/supabase/queries";
 import { Job } from "@/types";
 import { notFound } from "next/navigation";
 import JobDetailsClient from "@/components/jobs/JobDetailsClient"; // Import the new client component
+import CustomResumeJobsList from "@/components/jobs/CustomResumeJobsList";
 import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
 
@@ -11,6 +12,10 @@ type PageProps = {
 
 export default async function JobDetailPage({ params }: PageProps) {
   const { job_id } = await params;
+
+  if (job_id === "custom-resumes") {
+    return <CustomResumeJobsList />;
+  }
 
   if (!job_id) {
     // This case should ideally be handled by Next.js routing if job_id is missing in URL
