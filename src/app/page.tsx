@@ -149,7 +149,7 @@ export default async function Home() {
       title: "Expired Jobs",
       value: expiredJobsCount,
       icon: <Archive size={20} />,
-      href: "/",
+      href: "/jobs/expired",
       description: "Jobs that are no longer active.",
       color: "bg-gray-500",
     },

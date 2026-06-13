@@ -3,18 +3,28 @@ import { Job } from "@/types";
 import { notFound } from "next/navigation";
 import JobDetailsClient from "@/components/jobs/JobDetailsClient"; // Import the new client component
 import CustomResumeJobsList from "@/components/jobs/CustomResumeJobsList";
+import ExpiredJobsList from "@/components/jobs/ExpiredJobsList";
 import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
 
 type PageProps = {
   params: Promise<{ job_id: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-export default async function JobDetailPage({ params }: PageProps) {
+export default async function JobDetailPage({ params, searchParams }: PageProps) {
   const { job_id } = await params;
 
   if (job_id === "custom-resumes") {
-    return <CustomResumeJobsList />;
+    const queryParams = await searchParams;
+
+    return <CustomResumeJobsList searchParams={queryParams} />;
+  }
+
+  if (job_id === "expired") {
+    const queryParams = await searchParams;
+
+    return <ExpiredJobsList searchParams={queryParams} />;
   }
 
   if (!job_id) {

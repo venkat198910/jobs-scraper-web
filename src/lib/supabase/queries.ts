@@ -585,18 +585,113 @@ export async function updateBaseResume(
  * Gets the count of expired jobs.
  * @returns A promise that resolves to the number of expired jobs.
  */
-export async function getExpiredJobsCount(): Promise<number> {
+export async function getExpiredJobsCount(
+  provider?: string,
+  minScore?: number,
+  maxScore?: number,
+  isInterested?: boolean | null,
+  searchQuery?: string,
+): Promise<number> {
   const supabase = await createSupabaseServerClient();
-  const { count, error } = await supabase
+
+  let query = supabase
     .from("jobs")
     .select("*", { count: "exact", head: true })
     .eq("job_state", "expired");
+
+  if (provider) {
+    query = query.eq("provider", provider);
+  }
+
+  if (isInterested === true) {
+    query = query.is("is_interested", true);
+  } else if (isInterested === false) {
+    query = query.is("is_interested", false);
+  } else if (isInterested === null) {
+    query = query.is("is_interested", null);
+  }
+
+  if (minScore !== undefined) {
+    query = query.gte("resume_score", minScore);
+  }
+
+  if (maxScore !== undefined) {
+    query = query.lte("resume_score", maxScore);
+  }
+
+  if (searchQuery) {
+    query = query.or(
+      `job_title.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%`,
+    );
+  }
+
+  const { count, error } = await query;
 
   if (error) {
     console.error("Supabase count error (expired jobs):", error);
     throw new Error(error.message);
   }
   return count ?? 0;
+}
+
+/**
+ * Gets expired jobs (job_state is "expired").
+ * @returns A promise that resolves to an array of expired jobs.
+ */
+export async function getExpiredJobs(
+  page: number = 1,
+  pageSize: number = 10,
+  provider?: string,
+  minScore?: number,
+  maxScore?: number,
+  isInterested?: boolean | null,
+  searchQuery?: string,
+): Promise<Job[]> {
+  const supabase = await createSupabaseServerClient();
+
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabase
+    .from("jobs")
+    .select("*, customized_resumes(resume_link)")
+    .eq("job_state", "expired");
+
+  if (provider) {
+    query = query.eq("provider", provider);
+  }
+
+  if (isInterested === true) {
+    query = query.is("is_interested", true);
+  } else if (isInterested === false) {
+    query = query.is("is_interested", false);
+  } else if (isInterested === null) {
+    query = query.is("is_interested", null);
+  }
+
+  if (minScore !== undefined) {
+    query = query.gte("resume_score", minScore);
+  }
+
+  if (maxScore !== undefined) {
+    query = query.lte("resume_score", maxScore);
+  }
+
+  if (searchQuery) {
+    query = query.or(
+      `job_title.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%`,
+    );
+  }
+
+  const { data, error } = await query
+    .order("last_checked", { ascending: false })
+    .range(from, to);
+
+  if (error) {
+    console.error("Supabase error (expired jobs):", error);
+    throw new Error(error.message);
+  }
+  return data ?? [];
 }
 
 /**
@@ -645,19 +740,115 @@ export async function getScoredJobsCount(): Promise<number> {
  * Gets the count of jobs which have a custom resume generated (customized_resume_id is not null).
  * @returns A promise that resolves to the number of jobs with a custom resume.
  */
-export async function getCustomResumeJobsCount(): Promise<number> {
+export async function getCustomResumeJobsCount(
+  provider?: string,
+  minScore?: number,
+  maxScore?: number,
+  isInterested?: boolean | null,
+  searchQuery?: string,
+): Promise<number> {
   const supabase = await createSupabaseServerClient();
-  const { count, error } = await supabase
+
+  let query = supabase
     .from("jobs")
     .select("*", { count: "exact", head: true })
     .not("customized_resume_id", "is", null)
-    .eq("is_active", true); // Assuming active jobs
+    .eq("is_active", true);
+
+  if (provider) {
+    query = query.eq("provider", provider);
+  }
+
+  if (isInterested === true) {
+    query = query.is("is_interested", true);
+  } else if (isInterested === false) {
+    query = query.is("is_interested", false);
+  } else if (isInterested === null) {
+    query = query.is("is_interested", null);
+  }
+
+  if (minScore !== undefined) {
+    query = query.gte("resume_score", minScore);
+  }
+
+  if (maxScore !== undefined) {
+    query = query.lte("resume_score", maxScore);
+  }
+
+  if (searchQuery) {
+    query = query.or(
+      `job_title.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%`,
+    );
+  }
+
+  const { count, error } = await query;
 
   if (error) {
     console.error("Supabase count error (custom resume jobs):", error);
     throw new Error(error.message);
   }
   return count ?? 0;
+}
+
+/**
+ * Gets jobs which have a custom resume generated (customized_resume_id is not null).
+ * @returns A promise that resolves to an array of jobs with a custom resume.
+ */
+export async function getCustomResumeJobs(
+  page: number = 1,
+  pageSize: number = 10,
+  provider?: string,
+  minScore?: number,
+  maxScore?: number,
+  isInterested?: boolean | null,
+  searchQuery?: string,
+): Promise<Job[]> {
+  const supabase = await createSupabaseServerClient();
+
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabase
+    .from("jobs")
+    .select("*, customized_resumes(resume_link)")
+    .not("customized_resume_id", "is", null)
+    .eq("is_active", true);
+
+  if (provider) {
+    query = query.eq("provider", provider);
+  }
+
+  if (isInterested === true) {
+    query = query.is("is_interested", true);
+  } else if (isInterested === false) {
+    query = query.is("is_interested", false);
+  } else if (isInterested === null) {
+    query = query.is("is_interested", null);
+  }
+
+  if (minScore !== undefined) {
+    query = query.gte("resume_score", minScore);
+  }
+
+  if (maxScore !== undefined) {
+    query = query.lte("resume_score", maxScore);
+  }
+
+  if (searchQuery) {
+    query = query.or(
+      `job_title.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%`,
+    );
+  }
+
+  const { data, error } = await query
+    .order("scraped_at", { ascending: false })
+    .range(from, to);
+
+  if (error) {
+    console.error("Supabase error (custom resume jobs):", error);
+    throw new Error(error.message);
+  }
+  return data ?? [];
 }
 
 /**
@@ -765,23 +956,4 @@ export async function getCareersFutureJobsCount(): Promise<number> {
     throw new Error(error.message);
   }
   return count ?? 0;
-}
-
-/**
- * Gets the list of jobs which have a custom resume generated (customized_resume_id is not null).
- * @returns A promise that resolves to an array of jobs with a custom resume.
- */
-export async function getCustomResumeJobs(): Promise<Job[]> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("jobs")
-    .select("*, customized_resumes(resume_link)")
-    .not("customized_resume_id", "is", null)
-    .eq("is_active", true); // Assuming active jobs
-
-  if (error) {
-    console.error("Supabase error (custom resume jobs):", error);
-    throw new Error(error.message);
-  }
-  return data ?? [];
 }

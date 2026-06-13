@@ -1,8 +1,5 @@
 import { Suspense } from "react";
-import {
-  getCustomResumeJobs,
-  getCustomResumeJobsCount,
-} from "@/lib/supabase/queries";
+import { getExpiredJobs, getExpiredJobsCount } from "@/lib/supabase/queries";
 import { Job } from "@/types";
 import FilterButton from "@/components/jobs/FilterButton";
 import JobListSkeleton from "@/components/jobs/JobListSkeleton";
@@ -12,13 +9,13 @@ import TopMatchesList from "@/components/jobs/TopMatchesList";
 
 const PAGE_SIZE = 10;
 
-interface CustomResumeJobsListProps {
+interface ExpiredJobsListProps {
   searchParams?: { [key: string]: string | string[] | undefined };
 }
 
-export default async function CustomResumeJobsList({
+export default async function ExpiredJobsList({
   searchParams,
-}: CustomResumeJobsListProps) {
+}: ExpiredJobsListProps) {
   const currentPage = parseInt(searchParams?.page as string) || 1;
   const searchQuery = searchParams?.query as string;
   const provider = searchParams?.provider as string;
@@ -40,7 +37,7 @@ export default async function CustomResumeJobsList({
   const minScore = minScoreParam ? parseInt(minScoreParam) : undefined;
   const maxScore = maxScoreParam ? parseInt(maxScoreParam) : undefined;
 
-  const jobs: Job[] = await getCustomResumeJobs(
+  const jobs: Job[] = await getExpiredJobs(
     currentPage,
     PAGE_SIZE,
     providerFilter,
@@ -50,7 +47,7 @@ export default async function CustomResumeJobsList({
     searchQuery,
   );
 
-  const totalCount = await getCustomResumeJobsCount(
+  const totalCount = await getExpiredJobsCount(
     providerFilter,
     minScore,
     maxScore,
@@ -64,11 +61,9 @@ export default async function CustomResumeJobsList({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Custom Resume Jobs
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900">Expired Jobs</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Jobs with custom resumes ({totalCount} total)
+            Jobs that are no longer active ({totalCount} total)
           </p>
         </div>
 
