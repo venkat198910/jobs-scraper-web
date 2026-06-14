@@ -123,14 +123,29 @@ export default function CustomPdfViewer({
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (effectiveFileUrl) {
-      let fileName = fileUrl.split("/").pop() || "document.pdf";
-      fileName = fileName.replace(/\.[^/.]+$/, "") + ".pdf";
+      let fileName = "document.pdf";
+      try {
+        const parsedUrl = new URL(fileUrl, window.location.origin);
+        fileName = parsedUrl.pathname.split("/").pop() || fileName;
+      } catch {
+        fileName = fileUrl.split("?")[0].split("/").pop() || fileName;
+      }
+      fileName = decodeURIComponent(fileName).replace(/\.[^/.]+$/, "") + ".pdf";
 
-      fetch(effectiveFileUrl.split("?")[0])
-        .then((response) => response.blob())
-        .then((blob) => {
+      try {
+        const response = await fetch(effectiveFileUrl);
+        if (!response.ok) {
+          throw new Error(`Download failed with status ${response.status}`);
+        }
+
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType && !contentType.includes("pdf") && !contentType.includes("octet-stream")) {
+          throw new Error(`Downloaded file is not a PDF (${contentType})`);
+        }
+
+        const blob = await response.blob();
           const pdfBlob = new Blob([blob], {
             type: "application/pdf",
           });
@@ -148,10 +163,14 @@ export default function CustomPdfViewer({
           setTimeout(() => {
             window.URL.revokeObjectURL(blobUrl);
           }, 100);
-        })
-        .catch((error) => {
-          console.error("Error downloading PDF:", error);
-        });
+      } catch (error) {
+        console.error("Error downloading PDF:", error);
+        setPdfError(
+          error instanceof Error
+            ? error.message
+            : "Failed to download PDF document.",
+        );
+      }
     }
   };
 
