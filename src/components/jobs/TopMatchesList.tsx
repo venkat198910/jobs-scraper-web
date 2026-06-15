@@ -10,6 +10,7 @@ import {
   ThumbsDown,
   BuildingIcon,
   MapPinIcon,
+  CalendarDays,
   BarChart3Icon,
   FileText,
   Link as SocialLink,
@@ -17,6 +18,7 @@ import {
 import MarkdownRenderer from "./MarkdownRenderer";
 import { Job } from "@/types";
 import { useRouter, useSearchParams } from "next/navigation"; // Added useSearchParams
+import { formatJobDate, getJobPostingDate } from "@/lib/jobs/dates";
 
 interface TopMatchesListProps {
   jobs: Job[];
@@ -260,6 +262,12 @@ export default function TopMatchesList({
                         <MapPinIcon className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
                         <span className="truncate">{job.location}</span>
                       </div>
+                      <div className="mt-1 flex items-center text-sm text-gray-500">
+                        <CalendarDays className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                        <span className="truncate">
+                          Posted {formatJobDate(getJobPostingDate(job))}
+                        </span>
+                      </div>
                       <div className="mt-1 flex items-center text-xs text-gray-400">
                         <SocialLink className="h-3 w-3 mr-1 flex-shrink-0" />
                         <span className="capitalize truncate">
@@ -338,6 +346,12 @@ export default function TopMatchesList({
                     <div className="flex items-center">
                       <MapPinIcon className="h-4 w-4 mr-1.5 text-gray-500" />
                       <span>{selectedJob.location}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <CalendarDays className="h-4 w-4 mr-1.5 text-gray-500" />
+                      <span>
+                        Posted {formatJobDate(getJobPostingDate(selectedJob))}
+                      </span>
                     </div>
                     <div className="flex items-center">
                       <SocialLink className="h-4 w-4 mr-1.5 text-gray-500" />

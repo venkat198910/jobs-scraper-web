@@ -11,6 +11,9 @@ export interface Job {
   application_date: string;
   resume_score?: number;
   notes?: string;
+  posted_at?: string | null;
+  posted_date?: string | null;
+  published_at?: string | null;
   scraped_at: string;
   last_checked: string;
   job_state: string;

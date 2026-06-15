@@ -10,6 +10,7 @@ import {
   ThumbsDown,
   BuildingIcon,
   MapPinIcon,
+  CalendarDays,
   BarChart3Icon,
   FileText,
   Link as SocialLink,
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import MarkdownRenderer from "./MarkdownRenderer"; // Assuming this is in the same directory or adjust path
 import { Job } from "@/types"; // Assuming types are defined here
+import { formatJobDate, getJobPostingDate } from "@/lib/jobs/dates";
 
 interface JobDetailsClientProps {
   initialJob: Job;
@@ -165,6 +167,10 @@ export default function JobDetailsClient({
               <div className="flex items-center">
                 <MapPinIcon className="h-5 w-5 mr-2 text-gray-500" />
                 <span>{job.location}</span>
+              </div>
+              <div className="flex items-center">
+                <CalendarDays className="h-5 w-5 mr-2 text-gray-500" />
+                <span>Posted {formatJobDate(getJobPostingDate(job))}</span>
               </div>
               <div className="flex items-center">
                 <SocialLink className="h-5 w-5 mr-2 text-gray-500" />
