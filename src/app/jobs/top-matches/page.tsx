@@ -42,9 +42,14 @@ export default async function TopMatchesPage({
   // Get resume score filter from search params
   const minScoreParam = params?.minScore as string;
   const maxScoreParam = params?.maxScore as string;
+  const scoreStageParam = params?.scoreStage as string;
 
   const minScore = minScoreParam ? parseInt(minScoreParam) : undefined;
   const maxScore = maxScoreParam ? parseInt(maxScoreParam) : undefined;
+  const scoreStage =
+    scoreStageParam === "initial" || scoreStageParam === "custom"
+      ? scoreStageParam
+      : undefined;
 
   // Fetch the jobs for the current page with filters
   const topJobs: Job[] = await getTopScoredJobs(
@@ -54,7 +59,8 @@ export default async function TopMatchesPage({
     minScore,
     maxScore,
     interestFilter,
-    searchQuery
+    searchQuery,
+    scoreStage
   );
 
   // Fetch total count with filters
@@ -63,7 +69,8 @@ export default async function TopMatchesPage({
     minScore,
     maxScore,
     interestFilter,
-    searchQuery
+    searchQuery,
+    scoreStage
   );
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
@@ -101,6 +108,12 @@ export default async function TopMatchesPage({
       filtersApplied.push(`with resume scores >= ${minScore}`);
     } else if (maxScore !== undefined) {
       filtersApplied.push(`with resume scores <= ${maxScore}`);
+    }
+
+    if (scoreStage === "initial") {
+      filtersApplied.push("scored using the original resume");
+    } else if (scoreStage === "custom") {
+      filtersApplied.push("scored using a customized resume");
     }
 
     if (filtersApplied.length > 0) {

@@ -412,8 +412,7 @@ export default function TopMatchesList({
                   );
                 })()}
 
-                {(selectedJob.resume_link ||
-                  selectedJob.customized_resumes?.resume_link) && (
+                {selectedJob.customized_resume_id && (
                   <button
                     onClick={() =>
                       handleViewResume(

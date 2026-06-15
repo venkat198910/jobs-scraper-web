@@ -30,46 +30,55 @@ export async function getTopScoredJobs(
   maxScore: number = 100, // Default maxScore
   isInterested?: boolean | null, // Optional interest filter (true, false, or null for 'not marked')
   searchQuery?: string, // Optional search query
+  scoreStage?: "initial" | "custom",
 ): Promise<Job[]> {
   const supabase = await createSupabaseServerClient();
 
-  const rpcParams: any = {
-    p_page_number: page,
-    p_page_size: pageSize,
-    p_provider: provider || null,
-    p_min_score: minScore,
-    p_max_score: maxScore,
-    p_search_query: searchQuery || null, // Add search query to RPC params
-  };
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
 
-  // Determine the string value for p_is_interested_option
-  let interestOption: string | undefined = undefined;
+  let query = supabase
+    .from("jobs")
+    .select("*")
+    .eq("is_active", true)
+    .eq("status", "new")
+    .eq("job_state", "new")
+    .gte("resume_score", minScore)
+    .lte("resume_score", maxScore);
+
+  if (provider) {
+    query = query.eq("provider", provider);
+  }
+
+  if (scoreStage) {
+    query = query.eq("resume_score_stage", scoreStage);
+  }
+
   if (isInterested === true) {
-    interestOption = "true";
+    query = query.is("is_interested", true);
   } else if (isInterested === false) {
-    interestOption = "false";
+    query = query.is("is_interested", false);
   } else if (isInterested === null) {
-    interestOption = "null_value";
-  }
-  // If isInterested is undefined (meaning 'all'), interestOption remains undefined,
-  // and p_is_interested_option will not be added to rpcParams,
-  // so the RPC function will use its default 'all'.
-
-  if (interestOption !== undefined) {
-    rpcParams.p_is_interested_option = interestOption;
+    query = query.is("is_interested", null);
   }
 
-  const response = await supabase.rpc(
-    "get_top_scored_jobs_custom_sort",
-    rpcParams,
-  );
+  if (searchQuery) {
+    query = query.or(
+      `job_title.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%`,
+    );
+  }
 
-  // The existing handleResponse function can be used if it expects { data, error }
-  // and data is the array of jobs.
-  // If rpc() returns data directly in response.data without an outer data property, adjust accordingly.
-  // Assuming supabase.rpc returns { data: Job[], error: PostgrestError | null }
-  const data = await handleResponse(response);
-  return data ?? []; // Return empty array if data is null/undefined
+  const { data, error } = await query
+    .order("is_interested", { ascending: false, nullsFirst: false })
+    .order("resume_score", { ascending: false, nullsFirst: false })
+    .order("scraped_at", { ascending: false })
+    .range(from, to);
+
+  if (error) {
+    console.error("Supabase error (top scored jobs):", error);
+    throw new Error(error.message);
+  }
+  return data ?? [];
 }
 
 // New function to get the count of top scored jobs
@@ -80,6 +89,7 @@ export async function getTopScoredJobsCount(
   maxScore: number = 100, // Default maxScore
   isInterested?: boolean | null, // Optional interest filter
   searchQuery?: string, // Optional search query
+  scoreStage?: "initial" | "custom",
 ): Promise<number> {
   const supabase = await createSupabaseServerClient();
 
@@ -95,6 +105,10 @@ export async function getTopScoredJobsCount(
   // Add provider filter if specified
   if (provider) {
     query = query.eq("provider", provider);
+  }
+
+  if (scoreStage) {
+    query = query.eq("resume_score_stage", scoreStage);
   }
 
   // Add interest filter if specified
