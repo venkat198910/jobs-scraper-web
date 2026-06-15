@@ -39,9 +39,19 @@ export default async function NewJobsPage({
   // Get resume score filter from search params
   const minScoreParam = params?.minScore as string;
   const maxScoreParam = params?.maxScore as string;
+  const scoreStatusParam = params?.scoreStatus as string;
+  const customResumeParam = params?.customResume as string;
 
   const minScore = minScoreParam ? parseInt(minScoreParam) : undefined;
   const maxScore = maxScoreParam ? parseInt(maxScoreParam) : undefined;
+  const scoreStatus =
+    scoreStatusParam === "pending" || scoreStatusParam === "scored"
+      ? scoreStatusParam
+      : undefined;
+  const customResumeStatus =
+    customResumeParam === "missing" || customResumeParam === "present"
+      ? customResumeParam
+      : undefined;
 
   // Fetch the jobs for the current page
   const newJobs: Job[] = await getNewJobs(
@@ -51,7 +61,9 @@ export default async function NewJobsPage({
     minScore,
     maxScore,
     interestFilter, // Pass interestFilter
-    searchQuery // Pass searchQuery
+    searchQuery, // Pass searchQuery
+    scoreStatus,
+    customResumeStatus
   );
 
   // Fetch total count
@@ -60,19 +72,31 @@ export default async function NewJobsPage({
     minScore,
     maxScore,
     interestFilter, // Pass interestFilter
-    searchQuery // Pass searchQuery
+    searchQuery, // Pass searchQuery
+    scoreStatus,
+    customResumeStatus
   );
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const pageTitle =
+    scoreStatus === "pending"
+      ? "Pending Scoring"
+      : customResumeStatus === "missing"
+        ? "Jobs Without Custom Resumes"
+        : providerFilter === "linkedin"
+          ? "LinkedIn Jobs"
+          : providerFilter === "careers_future"
+            ? "CareersFuture Jobs"
+            : "New Jobs";
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Page header with actions */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">New Jobs</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{pageTitle}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            New jobs ({totalCount} total)
+            {pageTitle} ({totalCount} total)
           </p>
         </div>
 

@@ -134,10 +134,12 @@ export async function getNewJobs(
   page: number = 1,
   pageSize: number = 10,
   provider?: string, // Optional provider filter
-  minScore: number = 0, // Default minScore (assuming 0 as a base for 'new' jobs if not specified)
-  maxScore: number = 100, // Default maxScore
+  minScore?: number,
+  maxScore?: number,
   isInterested?: boolean | null, // Optional interest filter (true, false, or null for 'not marked')
   searchQuery?: string, // Optional search query
+  scoreStatus?: "pending" | "scored",
+  customResumeStatus?: "missing" | "present",
 ): Promise<Job[]> {
   const supabase = await createSupabaseServerClient();
 
@@ -149,9 +151,27 @@ export async function getNewJobs(
     .select("*")
     .eq("is_active", true)
     .eq("status", "new") // Filter by status
-    .eq("job_state", "new")
-    .gte("resume_score", minScore) // Apply minScore filter
-    .lte("resume_score", maxScore); // Apply maxScore filter
+    .eq("job_state", "new");
+
+  if (scoreStatus === "pending") {
+    query = query.is("resume_score", null);
+  } else if (scoreStatus === "scored") {
+    query = query.not("resume_score", "is", null);
+  }
+
+  if (scoreStatus !== "pending" && minScore !== undefined) {
+    query = query.gte("resume_score", minScore);
+  }
+
+  if (scoreStatus !== "pending" && maxScore !== undefined) {
+    query = query.lte("resume_score", maxScore);
+  }
+
+  if (customResumeStatus === "missing") {
+    query = query.is("customized_resume_id", null);
+  } else if (customResumeStatus === "present") {
+    query = query.not("customized_resume_id", "is", null);
+  }
 
   // Add provider filter if specified
   if (provider) {
@@ -186,10 +206,12 @@ export async function getNewJobs(
 // Function to get the count of all active jobs with filters
 export async function getAllActiveJobsCount(
   provider?: string, // Optional provider filter
-  minScore: number = 0, // Default minScore (assuming 0 as a base if not specified)
-  maxScore: number = 100, // Default maxScore
+  minScore?: number,
+  maxScore?: number,
   isInterested?: boolean | null, // Optional interest filter
   searchQuery?: string, // Optional search query
+  scoreStatus?: "pending" | "scored",
+  customResumeStatus?: "missing" | "present",
 ): Promise<number> {
   const supabase = await createSupabaseServerClient();
 
@@ -198,9 +220,27 @@ export async function getAllActiveJobsCount(
     .select("*", { count: "exact", head: true }) // Select count only
     .eq("is_active", true)
     .eq("status", "new")
-    .eq("job_state", "new")
-    .gte("resume_score", minScore) // Apply minScore filter
-    .lte("resume_score", maxScore); // Apply maxScore filter
+    .eq("job_state", "new");
+
+  if (scoreStatus === "pending") {
+    query = query.is("resume_score", null);
+  } else if (scoreStatus === "scored") {
+    query = query.not("resume_score", "is", null);
+  }
+
+  if (scoreStatus !== "pending" && minScore !== undefined) {
+    query = query.gte("resume_score", minScore);
+  }
+
+  if (scoreStatus !== "pending" && maxScore !== undefined) {
+    query = query.lte("resume_score", maxScore);
+  }
+
+  if (customResumeStatus === "missing") {
+    query = query.is("customized_resume_id", null);
+  } else if (customResumeStatus === "present") {
+    query = query.not("customized_resume_id", "is", null);
+  }
 
   // Add provider filter if specified
   if (provider) {
@@ -214,8 +254,9 @@ export async function getAllActiveJobsCount(
     query = query.is("is_interested", false);
   } else if (isInterested === null) {
     query = query.is("is_interested", null);
+  } else {
+    query = query.or("is_interested.is.null,is_interested.eq.true");
   }
-  // If isInterested is undefined, no additional filter is applied for interest status.
 
   // Add search query filter if specified
   if (searchQuery) {
@@ -706,7 +747,8 @@ export async function getPendingScoreJobsCount(): Promise<number> {
     .is("resume_score", null)
     .eq("is_active", true) // Assuming we only count active jobs
     .eq("status", "new") // And new jobs that haven't been processed beyond initial scraping
-    .eq("job_state", "new");
+    .eq("job_state", "new")
+    .or("is_interested.is.null,is_interested.eq.true");
 
   if (error) {
     console.error("Supabase count error (pending score jobs):", error);
@@ -861,7 +903,10 @@ export async function getNoCustomResumeJobsCount(): Promise<number> {
     .from("jobs")
     .select("*", { count: "exact", head: true })
     .is("customized_resume_id", null)
-    .eq("is_active", true); // Assuming active jobs
+    .eq("is_active", true)
+    .eq("status", "new")
+    .eq("job_state", "new")
+    .or("is_interested.is.null,is_interested.eq.true");
 
   if (error) {
     console.error("Supabase count error (no custom resume jobs):", error);
@@ -927,8 +972,10 @@ export async function getLinkedInJobsCount(): Promise<number> {
     .from("jobs")
     .select("*", { count: "exact", head: true })
     .eq("provider", "linkedin")
-    .eq("is_active", true) // Consider if these filters are always needed
-    .eq("job_state", "new");
+    .eq("is_active", true)
+    .eq("status", "new")
+    .eq("job_state", "new")
+    .or("is_interested.is.null,is_interested.eq.true");
 
   if (error) {
     console.error("Supabase count error (LinkedIn jobs):", error);
@@ -948,8 +995,10 @@ export async function getCareersFutureJobsCount(): Promise<number> {
     .from("jobs")
     .select("*", { count: "exact", head: true })
     .eq("provider", "careers_future")
-    .eq("is_active", true) // Consider if these filters are always needed
-    .eq("job_state", "new");
+    .eq("is_active", true)
+    .eq("status", "new")
+    .eq("job_state", "new")
+    .or("is_interested.is.null,is_interested.eq.true");
 
   if (error) {
     console.error("Supabase count error (Careers Future jobs):", error);
