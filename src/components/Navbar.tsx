@@ -12,6 +12,7 @@ import {
   CheckSquare,
   Menu,
   X,
+  Settings,
 } from "lucide-react";
 
 export default function Navbar() {
@@ -50,6 +51,7 @@ export default function Navbar() {
     { href: "/jobs/new", icon: <Zap size={18} />, text: "New" },
     { href: "/jobs/applied", icon: <CheckSquare size={18} />, text: "Applied" },
     { href: "/profile", icon: <User size={18} />, text: "Profile" },
+    { href: "/settings", icon: <Settings size={18} />, text: "Settings" },
   ];
 
   return (
