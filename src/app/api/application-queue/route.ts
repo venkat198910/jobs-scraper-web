@@ -1,0 +1,159 @@
+import { NextResponse } from "next/server";
+import { createSupabaseServerClient } from "@/utils/supabase/server";
+
+const QUEUE_TABLE = "application_queue";
+const QUEUE_BUCKET = "resumes";
+const QUEUE_PREFIX = "application_queue";
+
+type SupabaseClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+
+type ApplicationQueueItem = {
+  id?: string;
+  job_id?: string;
+  customized_resume_id?: string;
+  application_type?: string;
+  portal?: string;
+  status?: string;
+  run_mode?: string;
+  apply_url?: string;
+  resume_path?: string;
+  score?: number;
+  notes?: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
+  source?: "table" | "storage";
+};
+
+export async function GET() {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from(QUEUE_TABLE)
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (error) {
+      if (isMissingTableError(error)) {
+        const items = await getStorageQueueItems(supabase);
+        return NextResponse.json({
+          items,
+          source: "storage",
+          storageFallback: true,
+        });
+      }
+
+      throw error;
+    }
+
+    return NextResponse.json({
+      items: (data ?? []).map((item) => normalizeItem(item, "table")),
+      source: "table",
+      storageFallback: false,
+    });
+  } catch (error) {
+    console.error("Error loading application queue:", error);
+    return NextResponse.json(
+      {
+        items: [],
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to load application queue",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+function isMissingTableError(error: { code?: string; message?: string }) {
+  return (
+    error.code === "42P01" ||
+    /application_queue|schema cache|does not exist/i.test(error.message || "")
+  );
+}
+
+async function getStorageQueueItems(supabase: SupabaseClient) {
+  const { data, error } = await supabase.storage
+    .from(QUEUE_BUCKET)
+    .list(QUEUE_PREFIX, {
+      limit: 100,
+      sortBy: { column: "created_at", order: "desc" },
+    });
+
+  if (error || !data?.length) return [];
+
+  const items = await Promise.all(
+    data
+      .filter((file) => file.name.endsWith(".json"))
+      .map(async (file) => {
+        try {
+          const { data: blob, error: downloadError } = await supabase.storage
+            .from(QUEUE_BUCKET)
+            .download(`${QUEUE_PREFIX}/${file.name}`);
+
+          if (downloadError || !blob) return null;
+
+          const parsed = JSON.parse(await blob.text());
+          return normalizeItem(
+            {
+              ...parsed,
+              created_at: parsed.created_at ?? file.created_at,
+              updated_at: parsed.updated_at ?? file.updated_at,
+            },
+            "storage"
+          );
+        } catch {
+          return null;
+        }
+      })
+  );
+
+  return items
+    .filter((item): item is ApplicationQueueItem => item !== null)
+    .sort((a, b) => {
+      const aTime = new Date(a.created_at ?? 0).getTime();
+      const bTime = new Date(b.created_at ?? 0).getTime();
+      return bTime - aTime;
+    });
+}
+
+function normalizeItem(
+  item: Record<string, unknown>,
+  source: "table" | "storage"
+): ApplicationQueueItem {
+  const notes = asRecord(item.notes) ?? {};
+
+  return {
+    id: asString(item.id),
+    job_id: asString(item.job_id),
+    customized_resume_id: asString(item.customized_resume_id),
+    application_type: asString(item.application_type),
+    portal: asString(item.portal),
+    status: asString(item.status),
+    run_mode: asString(item.run_mode),
+    apply_url: asString(item.apply_url),
+    resume_path: asString(item.resume_path),
+    score: asNumber(item.score),
+    notes,
+    created_at: asString(item.created_at),
+    updated_at: asString(item.updated_at),
+    source,
+  };
+}
+
+function asString(value: unknown) {
+  return typeof value === "string" ? value : undefined;
+}
+
+function asNumber(value: unknown) {
+  return typeof value === "number" ? value : undefined;
+}
+
+function asRecord(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  return value as Record<string, unknown>;
+}

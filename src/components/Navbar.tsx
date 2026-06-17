@@ -10,6 +10,7 @@ import {
   User,
   Zap,
   CheckSquare,
+  ClipboardCheck,
   Menu,
   X,
   Settings,
@@ -50,6 +51,7 @@ export default function Navbar() {
     { href: "/jobs/top-matches", icon: <Star size={18} />, text: "Matches" },
     { href: "/jobs/new", icon: <Zap size={18} />, text: "New" },
     { href: "/jobs/applied", icon: <CheckSquare size={18} />, text: "Applied" },
+    { href: "/applications", icon: <ClipboardCheck size={18} />, text: "Applications" },
     { href: "/profile", icon: <User size={18} />, text: "Profile" },
     { href: "/settings", icon: <Settings size={18} />, text: "Settings" },
   ];
