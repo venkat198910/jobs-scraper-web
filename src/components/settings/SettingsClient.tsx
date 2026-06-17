@@ -5,6 +5,7 @@ import {
   BriefcaseBusiness,
   Building2,
   Check,
+  Clock3,
   Loader2,
   MapPin,
   Plus,
@@ -15,8 +16,11 @@ import {
 } from "lucide-react";
 import {
   defaultSettings,
+  jobTypeOptions,
   locationSuggestions,
   normalizeSettings,
+  postingDateOptions,
+  roleSuggestions,
   type SettingKey,
   type SettingsState,
 } from "@/lib/settings";
@@ -70,6 +74,11 @@ export default function SettingsClient() {
     const selectedLocations = new Set(settings.locations.map((location) => location.toLowerCase()));
     return locationSuggestions.filter((location) => !selectedLocations.has(location.toLowerCase()));
   }, [settings.locations]);
+
+  const availableRoleSuggestions = useMemo(() => {
+    const selectedRoles = new Set(settings.roles.map((role) => role.toLowerCase()));
+    return roleSuggestions.filter((role) => !selectedRoles.has(role.toLowerCase()));
+  }, [settings.roles]);
 
   async function saveSettings(nextSettings = settings) {
     setIsSaving(true);
@@ -129,6 +138,23 @@ export default function SettingsClient() {
     }));
   }
 
+  function setJobType(value: string) {
+    setSettings((current) => {
+      const selected = current.jobTypes.includes(value)
+        ? current.jobTypes.filter((item) => item !== value)
+        : [...current.jobTypes, value];
+
+      return { ...current, jobTypes: selected.length > 0 ? selected : [value] };
+    });
+  }
+
+  function setAdvanced(key: keyof SettingsState["advanced"], value: number) {
+    setSettings((current) => ({
+      ...current,
+      advanced: { ...current.advanced, [key]: value },
+    }));
+  }
+
   return (
     <div className="max-w-7xl mx-auto py-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-6">
@@ -179,7 +205,6 @@ export default function SettingsClient() {
               onChange={setLocationDraft}
               onAdd={() => addItem("locations", locationDraft)}
               suggestions={availableLocationSuggestions}
-              suggestionId="location-suggestions"
             />
           </div>
         </section>
@@ -218,6 +243,7 @@ export default function SettingsClient() {
               placeholder="Add role"
               onChange={setRoleDraft}
               onAdd={() => addItem("roles", roleDraft)}
+              suggestions={availableRoleSuggestions}
             />
           </div>
         </section>
@@ -236,7 +262,43 @@ export default function SettingsClient() {
       </div>
 
       <section className="mt-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="mb-4 flex items-center gap-2">
+          <Clock3 className="h-5 w-5 text-slate-600" />
+          <h2 className="text-base font-semibold text-slate-950">LinkedIn Filters</h2>
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
+          <div>
+            <span className="mb-2 block text-xs font-medium text-slate-500">Job Type</span>
+            <div className="flex flex-wrap gap-2">
+              {jobTypeOptions.map((option) => (
+                <TogglePill
+                  key={option.value}
+                  label={option.label}
+                  checked={settings.jobTypes.includes(option.value)}
+                  onClick={() => setJobType(option.value)}
+                />
+              ))}
+            </div>
+          </div>
+          <label className="block lg:max-w-72">
+            <span className="mb-2 block text-xs font-medium text-slate-500">Posting Date</span>
+            <select
+              value={settings.postingDateFilter}
+              onChange={(event) =>
+                setSettings((current) => ({ ...current, postingDateFilter: event.target.value }))
+              }
+              className="w-full rounded-md border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15"
+            >
+              {postingDateOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
           <TogglePill label="Remote" checked={settings.toggles.remote} onClick={() => setToggle("remote")} />
           <TogglePill label="Hybrid" checked={settings.toggles.hybrid} onClick={() => setToggle("hybrid")} />
           <TogglePill label="Onsite" checked={settings.toggles.onsite} onClick={() => setToggle("onsite")} />
@@ -251,6 +313,28 @@ export default function SettingsClient() {
               Saved {savedAt}
             </span>
           )}
+        </div>
+      </section>
+
+      <section className="mt-4 rounded-lg border border-slate-200 bg-white shadow-sm">
+        <SectionHeader icon={<SlidersHorizontal className="h-5 w-5" />} title="Advanced Settings" />
+        <div className="grid grid-cols-2 gap-3 p-5 md:grid-cols-4">
+          <NumberField label="LLM RPM" value={settings.advanced.llmMaxRpm} min={1} onChange={(value) => setAdvanced("llmMaxRpm", value)} />
+          <NumberField label="LLM Retries" value={settings.advanced.llmMaxRetries} min={0} onChange={(value) => setAdvanced("llmMaxRetries", value)} />
+          <NumberField label="LLM Backoff" value={settings.advanced.llmRetryBaseDelay} min={1} onChange={(value) => setAdvanced("llmRetryBaseDelay", value)} />
+          <NumberField label="LLM Daily Budget" value={settings.advanced.llmDailyRequestBudget} min={0} onChange={(value) => setAdvanced("llmDailyRequestBudget", value)} />
+          <NumberField label="LLM Delay" value={settings.advanced.llmRequestDelaySeconds} min={0} onChange={(value) => setAdvanced("llmRequestDelaySeconds", value)} />
+          <NumberField label="LinkedIn Pages" value={settings.advanced.linkedinMaxStart} min={0} onChange={(value) => setAdvanced("linkedinMaxStart", value)} />
+          <NumberField label="Request Timeout" value={settings.advanced.requestTimeout} min={5} onChange={(value) => setAdvanced("requestTimeout", value)} />
+          <NumberField label="HTTP Retries" value={settings.advanced.maxRetries} min={0} onChange={(value) => setAdvanced("maxRetries", value)} />
+          <NumberField label="HTTP Retry Delay" value={settings.advanced.retryDelaySeconds} min={1} onChange={(value) => setAdvanced("retryDelaySeconds", value)} />
+          <NumberField label="Expire Days" value={settings.advanced.jobExpiryDays} min={1} onChange={(value) => setAdvanced("jobExpiryDays", value)} />
+          <NumberField label="Check Days" value={settings.advanced.jobCheckDays} min={1} onChange={(value) => setAdvanced("jobCheckDays", value)} />
+          <NumberField label="Delete Days" value={settings.advanced.jobDeletionDays} min={1} onChange={(value) => setAdvanced("jobDeletionDays", value)} />
+          <NumberField label="Check Limit" value={settings.advanced.jobCheckLimit} min={1} onChange={(value) => setAdvanced("jobCheckLimit", value)} />
+          <NumberField label="Active Timeout" value={settings.advanced.activeCheckTimeout} min={5} onChange={(value) => setAdvanced("activeCheckTimeout", value)} />
+          <NumberField label="Active Retries" value={settings.advanced.activeCheckMaxRetries} min={0} onChange={(value) => setAdvanced("activeCheckMaxRetries", value)} />
+          <NumberField label="Active Retry Delay" value={settings.advanced.activeCheckRetryDelay} min={1} onChange={(value) => setAdvanced("activeCheckRetryDelay", value)} />
         </div>
       </section>
     </div>
@@ -295,18 +379,21 @@ function AddRow({
   onChange,
   onAdd,
   suggestions = [],
-  suggestionId,
 }: {
   value: string;
   placeholder: string;
   onChange: (value: string) => void;
   onAdd: () => void;
   suggestions?: string[];
-  suggestionId?: string;
 }) {
+  const normalizedValue = value.trim().toLowerCase();
+  const visibleSuggestions = suggestions
+    .filter((suggestion) => !normalizedValue || suggestion.toLowerCase().includes(normalizedValue))
+    .slice(0, 8);
+
   return (
-    <div className="mt-4 flex gap-2">
-      <div className="min-w-0 flex-1">
+    <div className="mt-4">
+      <div className="flex gap-2">
         <input
           value={value}
           onChange={(event) => onChange(event.target.value)}
@@ -314,25 +401,31 @@ function AddRow({
             if (event.key === "Enter") onAdd();
           }}
           placeholder={placeholder}
-          list={suggestionId}
-          className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15"
+          className="min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15"
         />
-        {suggestionId && suggestions.length > 0 && (
-          <datalist id={suggestionId}>
-            {suggestions.map((suggestion) => (
-              <option key={suggestion} value={suggestion} />
-            ))}
-          </datalist>
-        )}
+        <button
+          type="button"
+          onClick={onAdd}
+          className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+        >
+          <Plus className="h-4 w-4" />
+          Add
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={onAdd}
-        className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
-      >
-        <Plus className="h-4 w-4" />
-        Add
-      </button>
+      {visibleSuggestions.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {visibleSuggestions.map((suggestion) => (
+            <button
+              key={suggestion}
+              type="button"
+              onClick={() => onChange(suggestion)}
+              className="rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800"
+            >
+              {suggestion}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -399,13 +492,13 @@ function TogglePill({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center justify-between rounded-md border px-4 py-3 text-sm font-medium ${
+      className={`flex min-h-14 min-w-[9.5rem] items-center justify-between gap-3 rounded-md border px-4 py-3 text-sm font-medium ${
         checked
           ? "border-blue-200 bg-blue-50 text-blue-800"
           : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
       }`}
     >
-      {label}
+      <span className="min-w-0 text-left leading-snug">{label}</span>
       <Switch checked={checked} />
     </button>
   );
@@ -414,7 +507,7 @@ function TogglePill({
 function Switch({ checked }: { checked: boolean }) {
   return (
     <span
-      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+      className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors ${
         checked ? "bg-blue-600" : "bg-slate-300"
       }`}
       aria-hidden="true"
