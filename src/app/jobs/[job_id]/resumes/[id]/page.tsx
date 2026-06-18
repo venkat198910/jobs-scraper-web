@@ -1,5 +1,5 @@
 import CustomPdfViewer from "@/components/CustomPdfViewer";
-import { getCustomizedResumeById } from "@/lib/supabase/queries";
+import { getCustomizedResumeById, getJobById } from "@/lib/supabase/queries";
 import { getSignedUrl } from "@/lib/supabase/storage";
 import { Resume } from "@/types";
 import { notFound } from "next/navigation";
@@ -12,7 +12,15 @@ export default async function ResumeView({ params }: Params) {
   const { job_id, id } = await params;
 
   try {
-    const resume_data: Resume | null = await getCustomizedResumeById(id);
+    let resume_data: Resume | null = await getCustomizedResumeById(id);
+
+    if (!resume_data) {
+      const job = await getJobById(job_id);
+      const fallbackResumeId = job?.customized_resume_id;
+      if (fallbackResumeId && fallbackResumeId !== id) {
+        resume_data = await getCustomizedResumeById(fallbackResumeId);
+      }
+    }
 
     if (!resume_data) return notFound();
 

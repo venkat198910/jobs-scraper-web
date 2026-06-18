@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
+  CheckCircle2,
   ClipboardCheck,
   ExternalLink,
   FileText,
+  Play,
   RefreshCw,
 } from "lucide-react";
 
@@ -32,11 +34,17 @@ type QueueResponse = {
   error?: string;
 };
 
+type QueueUpdateResponse = {
+  item?: ApplicationQueueItem;
+  error?: string;
+};
+
 export default function ApplicationQueueClient() {
   const [items, setItems] = useState<ApplicationQueueItem[]>([]);
   const [source, setSource] = useState<"table" | "storage" | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<{
     key: "status" | "portal" | "run_mode" | null;
     value: string | null;
@@ -75,10 +83,11 @@ export default function ApplicationQueueClient() {
 
   const summary = useMemo(() => {
     const ready = items.filter((item) => item.status === "application_ready").length;
+    const inReview = items.filter((item) => item.status === "review_started").length;
     const planned = items.filter((item) => item.status === "planned").length;
     const submitted = items.filter((item) => item.status === "submitted").length;
 
-    return { ready, planned, submitted };
+    return { ready, inReview, planned, submitted };
   }, [items]);
 
   const filteredItems = useMemo(() => {
@@ -104,6 +113,48 @@ export default function ApplicationQueueClient() {
         ? { key: null, value: null }
         : { key, value }
     );
+  };
+
+  const updateQueueItem = async (
+    item: ApplicationQueueItem,
+    updates: { status?: string; run_mode?: string }
+  ) => {
+    if (!item.id) {
+      alert("This row is missing its application queue ID.");
+      return;
+    }
+
+    setUpdatingId(item.id);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/application-queue", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id, ...updates }),
+      });
+      const payload = (await response.json()) as QueueUpdateResponse;
+
+      if (!response.ok || !payload.item) {
+        throw new Error(payload.error ?? "Failed to update application");
+      }
+
+      const updatedItem = payload.item;
+
+      setItems((current) =>
+        current.map((currentItem) =>
+          currentItem.id === updatedItem.id ? updatedItem : currentItem
+        )
+      );
+    } catch (updateError) {
+      setError(
+        updateError instanceof Error
+          ? updateError.message
+          : "Failed to update application"
+      );
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   return (
@@ -146,12 +197,18 @@ export default function ApplicationQueueClient() {
           </div>
         )}
 
-        <section className="mt-6 grid gap-4 sm:grid-cols-3">
+        <section className="mt-6 grid gap-4 sm:grid-cols-4">
           <Metric
             label="Ready"
             value={summary.ready}
             active={activeFilter.key === "status" && activeFilter.value === "application_ready"}
             onClick={() => applyFilter("status", "application_ready")}
+          />
+          <Metric
+            label="In Review"
+            value={summary.inReview}
+            active={activeFilter.key === "status" && activeFilter.value === "review_started"}
+            onClick={() => applyFilter("status", "review_started")}
           />
           <Metric
             label="Planned"
@@ -207,6 +264,8 @@ export default function ApplicationQueueClient() {
                   item={item}
                   activeFilter={activeFilter}
                   onFilter={applyFilter}
+                  onUpdate={updateQueueItem}
+                  isUpdating={updatingId === item.id}
                 />
               ))}
             </div>
@@ -246,6 +305,8 @@ function ApplicationRow({
   item,
   activeFilter,
   onFilter,
+  onUpdate,
+  isUpdating,
 }: {
   item: ApplicationQueueItem;
   activeFilter: {
@@ -253,6 +314,11 @@ function ApplicationRow({
     value: string | null;
   };
   onFilter: (key: "status" | "portal" | "run_mode", value?: string) => void;
+  onUpdate: (
+    item: ApplicationQueueItem,
+    updates: { status?: string; run_mode?: string }
+  ) => Promise<void>;
+  isUpdating: boolean;
 }) {
   const title = getNoteText(item, "job_title") ?? "Untitled job";
   const company = getNoteText(item, "company") ?? "Unknown company";
@@ -300,6 +366,19 @@ function ApplicationRow({
       </div>
 
       <div className="flex flex-wrap gap-2 lg:justify-end">
+        {item.status !== "review_started" && item.status !== "submitted" && (
+          <button
+            type="button"
+            onClick={() =>
+              void onUpdate(item, { status: "review_started", run_mode: "review" })
+            }
+            disabled={isUpdating}
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Play className="h-4 w-4" />
+            Start Review
+          </button>
+        )}
         {item.resume_path && (
           <button
             type="button"
@@ -320,6 +399,17 @@ function ApplicationRow({
             Open Job
             <ExternalLink className="h-4 w-4" />
           </a>
+        )}
+        {item.status !== "submitted" && (
+          <button
+            type="button"
+            onClick={() => void onUpdate(item, { status: "submitted" })}
+            disabled={isUpdating}
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            Mark Submitted
+          </button>
         )}
       </div>
     </article>

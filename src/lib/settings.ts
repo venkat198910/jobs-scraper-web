@@ -17,6 +17,51 @@ export type SettingsState = {
   minExperience: number;
   maxExperience: number;
   minScore: number;
+  applicationProfile: {
+    firstName: string;
+    lastName: string;
+    fullName: string;
+    email: string;
+    phone: string;
+    linkedinUrl: string;
+    githubUrl: string;
+    currentLocation: string;
+    addressLine1: string;
+    addressCity: string;
+    addressState: string;
+    addressPostalCode: string;
+    totalExperience: string;
+    devopsExperience: string;
+    sreExperience: string;
+    cloudExperience: string;
+    kubernetesExperience: string;
+    terraformExperience: string;
+    pythonExperience: string;
+  };
+  applicationAutomation: {
+    maxJobAgeMinutes: number;
+    allowFinalSubmit: boolean;
+    allowPortalLogin: boolean;
+    headlessBrowser: boolean;
+  };
+  applicationAutoAnswers: {
+    workAuthorization: string;
+    needSponsorship: string;
+    indiaWorkAuthorization: string;
+    indiaNeedSponsorship: string;
+    outsideIndiaWorkAuthorization: string;
+    outsideIndiaNeedSponsorship: string;
+    currentLocation: string;
+    willingToRelocate: string;
+    relocateLocations: string;
+    noticePeriod: string;
+    indiaCurrentCtc: string;
+    indiaExpectedCtc: string;
+    uaeCurrentAnnual: string;
+    uaeCurrentMonthly: string;
+    uaeExpectedAnnual: string;
+    uaeExpectedMonthly: string;
+  };
   advanced: {
     llmMaxRpm: number;
     llmMaxRetries: number;
@@ -105,6 +150,51 @@ export const defaultSettings: SettingsState = {
   minExperience: 6,
   maxExperience: 12,
   minScore: 90,
+  applicationProfile: {
+    firstName: "Venkateswarlu",
+    lastName: "Derangula",
+    fullName: "Venkateswarlu Derangula",
+    email: "vderangula44@gmail.com",
+    phone: "+91 7780569119",
+    linkedinUrl: "https://www.linkedin.com/in/venkateswarlu-derangula/",
+    githubUrl: "https://github.com/venkat198910/",
+    currentLocation: "Bengaluru",
+    addressLine1: "31, KR Puram",
+    addressCity: "Bengaluru",
+    addressState: "Karnataka",
+    addressPostalCode: "560036",
+    totalExperience: "9.6",
+    devopsExperience: "7+",
+    sreExperience: "7+",
+    cloudExperience: "6+",
+    kubernetesExperience: "5+",
+    terraformExperience: "5+",
+    pythonExperience: "3+",
+  },
+  applicationAutomation: {
+    maxJobAgeMinutes: 60,
+    allowFinalSubmit: false,
+    allowPortalLogin: false,
+    headlessBrowser: false,
+  },
+  applicationAutoAnswers: {
+    workAuthorization: "No",
+    needSponsorship: "Yes",
+    indiaWorkAuthorization: "Yes",
+    indiaNeedSponsorship: "No",
+    outsideIndiaWorkAuthorization: "No",
+    outsideIndiaNeedSponsorship: "Yes",
+    currentLocation: "Bengaluru",
+    willingToRelocate: "Yes",
+    relocateLocations: "Bengaluru, Bangalore, Dubai, Abu Dhabi",
+    noticePeriod: "30 days",
+    indiaCurrentCtc: "31 LPA",
+    indiaExpectedCtc: "50 LPA",
+    uaeCurrentAnnual: "125000 AED",
+    uaeCurrentMonthly: "10300 AED",
+    uaeExpectedAnnual: "300000 AED",
+    uaeExpectedMonthly: "25000 AED",
+  },
   advanced: {
     llmMaxRpm: 10,
     llmMaxRetries: 3,
@@ -178,6 +268,11 @@ function enumValue(value: unknown, fallback: string, allowed: string[]) {
   return allowed.includes(text) ? text : fallback;
 }
 
+function stringValue(value: unknown, fallback = "") {
+  const text = String(value ?? "").trim();
+  return text || fallback;
+}
+
 export function normalizeSettings(value: unknown): SettingsState {
   const partial = value && typeof value === "object" ? (value as Partial<SettingsState>) : {};
   const toggles =
@@ -193,6 +288,18 @@ export function normalizeSettings(value: unknown): SettingsState {
   const advanced =
     partial.advanced && typeof partial.advanced === "object"
       ? (partial.advanced as Partial<SettingsState["advanced"]>)
+      : {};
+  const applicationProfile =
+    partial.applicationProfile && typeof partial.applicationProfile === "object"
+      ? (partial.applicationProfile as Partial<SettingsState["applicationProfile"]>)
+      : {};
+  const applicationAutomation =
+    partial.applicationAutomation && typeof partial.applicationAutomation === "object"
+      ? (partial.applicationAutomation as Partial<SettingsState["applicationAutomation"]>)
+      : {};
+  const applicationAutoAnswers =
+    partial.applicationAutoAnswers && typeof partial.applicationAutoAnswers === "object"
+      ? (partial.applicationAutoAnswers as Partial<SettingsState["applicationAutoAnswers"]>)
       : {};
 
   return {
@@ -211,6 +318,62 @@ export function normalizeSettings(value: unknown): SettingsState {
     minExperience,
     maxExperience,
     minScore: boundedNumber(partial.minScore, defaultSettings.minScore, 0, 100),
+    applicationProfile: {
+      firstName: stringValue(applicationProfile.firstName, defaultSettings.applicationProfile.firstName),
+      lastName: stringValue(applicationProfile.lastName, defaultSettings.applicationProfile.lastName),
+      fullName: stringValue(applicationProfile.fullName, defaultSettings.applicationProfile.fullName),
+      email: stringValue(applicationProfile.email, defaultSettings.applicationProfile.email),
+      phone: stringValue(applicationProfile.phone, defaultSettings.applicationProfile.phone),
+      linkedinUrl: stringValue(applicationProfile.linkedinUrl, defaultSettings.applicationProfile.linkedinUrl),
+      githubUrl: stringValue(applicationProfile.githubUrl, defaultSettings.applicationProfile.githubUrl),
+      currentLocation: stringValue(applicationProfile.currentLocation, defaultSettings.applicationProfile.currentLocation),
+      addressLine1: stringValue(applicationProfile.addressLine1, defaultSettings.applicationProfile.addressLine1),
+      addressCity: stringValue(applicationProfile.addressCity, defaultSettings.applicationProfile.addressCity),
+      addressState: stringValue(applicationProfile.addressState, defaultSettings.applicationProfile.addressState),
+      addressPostalCode: stringValue(applicationProfile.addressPostalCode, defaultSettings.applicationProfile.addressPostalCode),
+      totalExperience: stringValue(applicationProfile.totalExperience, defaultSettings.applicationProfile.totalExperience),
+      devopsExperience: stringValue(applicationProfile.devopsExperience, defaultSettings.applicationProfile.devopsExperience),
+      sreExperience: stringValue(applicationProfile.sreExperience, defaultSettings.applicationProfile.sreExperience),
+      cloudExperience: stringValue(applicationProfile.cloudExperience, defaultSettings.applicationProfile.cloudExperience),
+      kubernetesExperience: stringValue(applicationProfile.kubernetesExperience, defaultSettings.applicationProfile.kubernetesExperience),
+      terraformExperience: stringValue(applicationProfile.terraformExperience, defaultSettings.applicationProfile.terraformExperience),
+      pythonExperience: stringValue(applicationProfile.pythonExperience, defaultSettings.applicationProfile.pythonExperience),
+    },
+    applicationAutomation: {
+      maxJobAgeMinutes: boundedNumber(
+        applicationAutomation.maxJobAgeMinutes,
+        defaultSettings.applicationAutomation.maxJobAgeMinutes,
+        1,
+        1440
+      ),
+      allowFinalSubmit: Boolean(
+        applicationAutomation.allowFinalSubmit ?? defaultSettings.applicationAutomation.allowFinalSubmit
+      ),
+      allowPortalLogin: Boolean(
+        applicationAutomation.allowPortalLogin ?? defaultSettings.applicationAutomation.allowPortalLogin
+      ),
+      headlessBrowser: Boolean(
+        applicationAutomation.headlessBrowser ?? defaultSettings.applicationAutomation.headlessBrowser
+      ),
+    },
+    applicationAutoAnswers: {
+      workAuthorization: stringValue(applicationAutoAnswers.workAuthorization, defaultSettings.applicationAutoAnswers.workAuthorization),
+      needSponsorship: stringValue(applicationAutoAnswers.needSponsorship, defaultSettings.applicationAutoAnswers.needSponsorship),
+      indiaWorkAuthorization: stringValue(applicationAutoAnswers.indiaWorkAuthorization, defaultSettings.applicationAutoAnswers.indiaWorkAuthorization),
+      indiaNeedSponsorship: stringValue(applicationAutoAnswers.indiaNeedSponsorship, defaultSettings.applicationAutoAnswers.indiaNeedSponsorship),
+      outsideIndiaWorkAuthorization: stringValue(applicationAutoAnswers.outsideIndiaWorkAuthorization, defaultSettings.applicationAutoAnswers.outsideIndiaWorkAuthorization),
+      outsideIndiaNeedSponsorship: stringValue(applicationAutoAnswers.outsideIndiaNeedSponsorship, defaultSettings.applicationAutoAnswers.outsideIndiaNeedSponsorship),
+      currentLocation: stringValue(applicationAutoAnswers.currentLocation, defaultSettings.applicationAutoAnswers.currentLocation),
+      willingToRelocate: stringValue(applicationAutoAnswers.willingToRelocate, defaultSettings.applicationAutoAnswers.willingToRelocate),
+      relocateLocations: stringValue(applicationAutoAnswers.relocateLocations, defaultSettings.applicationAutoAnswers.relocateLocations),
+      noticePeriod: stringValue(applicationAutoAnswers.noticePeriod, defaultSettings.applicationAutoAnswers.noticePeriod),
+      indiaCurrentCtc: stringValue(applicationAutoAnswers.indiaCurrentCtc, defaultSettings.applicationAutoAnswers.indiaCurrentCtc),
+      indiaExpectedCtc: stringValue(applicationAutoAnswers.indiaExpectedCtc, defaultSettings.applicationAutoAnswers.indiaExpectedCtc),
+      uaeCurrentAnnual: stringValue(applicationAutoAnswers.uaeCurrentAnnual, defaultSettings.applicationAutoAnswers.uaeCurrentAnnual),
+      uaeCurrentMonthly: stringValue(applicationAutoAnswers.uaeCurrentMonthly, defaultSettings.applicationAutoAnswers.uaeCurrentMonthly),
+      uaeExpectedAnnual: stringValue(applicationAutoAnswers.uaeExpectedAnnual, defaultSettings.applicationAutoAnswers.uaeExpectedAnnual),
+      uaeExpectedMonthly: stringValue(applicationAutoAnswers.uaeExpectedMonthly, defaultSettings.applicationAutoAnswers.uaeExpectedMonthly),
+    },
     advanced: {
       llmMaxRpm: boundedNumber(advanced.llmMaxRpm, defaultSettings.advanced.llmMaxRpm, 1, 120),
       llmMaxRetries: boundedNumber(advanced.llmMaxRetries, defaultSettings.advanced.llmMaxRetries, 0, 10),

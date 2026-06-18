@@ -182,7 +182,7 @@ export default async function Home() {
       value: scoredWithCustomResumeCount,
       icon: <FileSignature size={20} />,
       href: "/jobs/top-matches?minScore=0&scoreStage=custom",
-      description: "Jobs scored using a customized resume.",
+      description: "Jobs with a generated custom resume and score.",
       color: "bg-purple-500",
     },
     {

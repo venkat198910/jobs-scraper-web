@@ -50,8 +50,10 @@ export async function getTopScoredJobs(
     query = query.eq("provider", provider);
   }
 
-  if (scoreStage) {
+  if (scoreStage === "initial") {
     query = query.eq("resume_score_stage", scoreStage);
+  } else if (scoreStage === "custom") {
+    query = query.not("customized_resume_id", "is", null);
   }
 
   if (isInterested === true) {
@@ -107,8 +109,10 @@ export async function getTopScoredJobsCount(
     query = query.eq("provider", provider);
   }
 
-  if (scoreStage) {
+  if (scoreStage === "initial") {
     query = query.eq("resume_score_stage", scoreStage);
+  } else if (scoreStage === "custom") {
+    query = query.not("customized_resume_id", "is", null);
   }
 
   // Add interest filter if specified
@@ -709,7 +713,7 @@ export async function getExpiredJobs(
 
   let query = supabase
     .from("jobs")
-    .select("*, customized_resumes(resume_link)")
+    .select("*, customized_resumes!inner(*)")
     .eq("job_state", "expired");
 
   if (provider) {
@@ -866,7 +870,7 @@ export async function getCustomResumeJobs(
 
   let query = supabase
     .from("jobs")
-    .select("*, customized_resumes(resume_link)")
+    .select("*, customized_resumes!inner(*)")
     .not("customized_resume_id", "is", null)
     .eq("is_active", true);
 
@@ -953,8 +957,11 @@ export async function getScoredWithOriginalResumeCount(): Promise<number> {
 }
 
 /**
- * Gets the count of scored jobs based on a custom resume.
- * (resume_score is not null AND resume_score_stage is "custom")
+ * Gets the count of scored jobs that have a generated custom resume.
+ *
+ * The custom re-score phase can later update resume_score_stage to "custom",
+ * but the UI should still show generated custom-resume jobs that already have
+ * a score instead of looking empty.
  * @returns A promise that resolves to the number of jobs scored with a custom resume.
  */
 export async function getScoredWithCustomResumeCount(): Promise<number> {
@@ -963,7 +970,7 @@ export async function getScoredWithCustomResumeCount(): Promise<number> {
     .from("jobs")
     .select("*", { count: "exact", head: true })
     .not("resume_score", "is", null)
-    .eq("resume_score_stage", "custom")
+    .not("customized_resume_id", "is", null)
     .eq("is_active", true)
     .eq("status", "new")
     .eq("job_state", "new");

@@ -76,6 +76,11 @@ export default function TopMatchesList({
     job_id: string,
     resume_id: string | null | undefined,
   ) => {
+    if (!resume_id) {
+      showToast("Resume is not available for this job.", "error");
+      return;
+    }
+
     // Preserve current search params and add source page info
     const params = new URLSearchParams(searchParams.toString());
     if (selectedJob) {
@@ -412,12 +417,14 @@ export default function TopMatchesList({
                   );
                 })()}
 
-                {selectedJob.customized_resume_id && (
+                {(selectedJob.customized_resume_id ||
+                  selectedJob.customized_resumes?.id) && (
                   <button
                     onClick={() =>
                       handleViewResume(
                         selectedJob.job_id,
-                        selectedJob.customized_resume_id,
+                        selectedJob.customized_resumes?.id ||
+                          selectedJob.customized_resume_id,
                       )
                     }
                     className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-md hover:bg-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"

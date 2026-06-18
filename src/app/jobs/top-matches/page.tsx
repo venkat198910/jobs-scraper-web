@@ -113,7 +113,7 @@ export default async function TopMatchesPage({
     if (scoreStage === "initial") {
       filtersApplied.push("scored using the original resume");
     } else if (scoreStage === "custom") {
-      filtersApplied.push("scored using a customized resume");
+      filtersApplied.push("with generated custom resumes and scores");
     }
 
     if (filtersApplied.length > 0) {

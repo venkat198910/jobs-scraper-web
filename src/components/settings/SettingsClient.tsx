@@ -6,6 +6,7 @@ import {
   Building2,
   Check,
   Clock3,
+  Contact,
   Loader2,
   MapPin,
   Plus,
@@ -152,6 +153,30 @@ export default function SettingsClient() {
     setSettings((current) => ({
       ...current,
       advanced: { ...current.advanced, [key]: value },
+    }));
+  }
+
+  function setProfile(key: keyof SettingsState["applicationProfile"], value: string) {
+    setSettings((current) => ({
+      ...current,
+      applicationProfile: { ...current.applicationProfile, [key]: value },
+    }));
+  }
+
+  function setAutomation(
+    key: keyof SettingsState["applicationAutomation"],
+    value: number | boolean,
+  ) {
+    setSettings((current) => ({
+      ...current,
+      applicationAutomation: { ...current.applicationAutomation, [key]: value },
+    }));
+  }
+
+  function setAutoAnswer(key: keyof SettingsState["applicationAutoAnswers"], value: string) {
+    setSettings((current) => ({
+      ...current,
+      applicationAutoAnswers: { ...current.applicationAutoAnswers, [key]: value },
     }));
   }
 
@@ -317,6 +342,100 @@ export default function SettingsClient() {
       </section>
 
       <section className="mt-4 rounded-lg border border-slate-200 bg-white shadow-sm">
+        <SectionHeader icon={<Contact className="h-5 w-5" />} title="Application Profile" />
+        <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-3">
+          <TextField label="First Name" value={settings.applicationProfile.firstName} onChange={(value) => setProfile("firstName", value)} />
+          <TextField label="Last Name" value={settings.applicationProfile.lastName} onChange={(value) => setProfile("lastName", value)} />
+          <TextField label="Full Name" value={settings.applicationProfile.fullName} onChange={(value) => setProfile("fullName", value)} />
+          <TextField label="Email" value={settings.applicationProfile.email} onChange={(value) => setProfile("email", value)} />
+          <TextField label="Mobile" value={settings.applicationProfile.phone} onChange={(value) => setProfile("phone", value)} />
+          <TextField label="Current Location" value={settings.applicationProfile.currentLocation} onChange={(value) => setProfile("currentLocation", value)} />
+          <TextField label="LinkedIn URL" value={settings.applicationProfile.linkedinUrl} onChange={(value) => setProfile("linkedinUrl", value)} />
+          <TextField label="GitHub URL" value={settings.applicationProfile.githubUrl} onChange={(value) => setProfile("githubUrl", value)} />
+          <TextField label="Address Line" value={settings.applicationProfile.addressLine1} onChange={(value) => setProfile("addressLine1", value)} />
+          <TextField label="City" value={settings.applicationProfile.addressCity} onChange={(value) => setProfile("addressCity", value)} />
+          <TextField label="State" value={settings.applicationProfile.addressState} onChange={(value) => setProfile("addressState", value)} />
+          <TextField label="Postal Code" value={settings.applicationProfile.addressPostalCode} onChange={(value) => setProfile("addressPostalCode", value)} />
+          <TextField label="Total Experience" value={settings.applicationProfile.totalExperience} onChange={(value) => setProfile("totalExperience", value)} />
+          <TextField label="DevOps Experience" value={settings.applicationProfile.devopsExperience} onChange={(value) => setProfile("devopsExperience", value)} />
+          <TextField label="SRE Experience" value={settings.applicationProfile.sreExperience} onChange={(value) => setProfile("sreExperience", value)} />
+          <TextField label="AWS/Cloud Experience" value={settings.applicationProfile.cloudExperience} onChange={(value) => setProfile("cloudExperience", value)} />
+          <TextField label="Kubernetes Experience" value={settings.applicationProfile.kubernetesExperience} onChange={(value) => setProfile("kubernetesExperience", value)} />
+          <TextField label="Terraform Experience" value={settings.applicationProfile.terraformExperience} onChange={(value) => setProfile("terraformExperience", value)} />
+          <TextField label="Python Experience" value={settings.applicationProfile.pythonExperience} onChange={(value) => setProfile("pythonExperience", value)} />
+        </div>
+      </section>
+
+      <section className="mt-4 rounded-lg border border-slate-200 bg-white shadow-sm">
+        <SectionHeader icon={<SlidersHorizontal className="h-5 w-5" />} title="Application Automation" />
+        <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-[14rem_1fr]">
+          <NumberField
+            label="Max Job Age Minutes"
+            value={settings.applicationAutomation.maxJobAgeMinutes}
+            min={1}
+            max={1440}
+            onChange={(value) => setAutomation("maxJobAgeMinutes", value)}
+          />
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+            <TogglePill
+              label="Allow Portal Login"
+              checked={settings.applicationAutomation.allowPortalLogin}
+              onClick={() => setAutomation("allowPortalLogin", !settings.applicationAutomation.allowPortalLogin)}
+            />
+            <TogglePill
+              label="Allow Final Submit"
+              checked={settings.applicationAutomation.allowFinalSubmit}
+              onClick={() => setAutomation("allowFinalSubmit", !settings.applicationAutomation.allowFinalSubmit)}
+            />
+            <TogglePill
+              label="Headless Browser"
+              checked={settings.applicationAutomation.headlessBrowser}
+              onClick={() => setAutomation("headlessBrowser", !settings.applicationAutomation.headlessBrowser)}
+            />
+          </div>
+        </div>
+        <div className="border-t border-slate-100 px-5 py-3 text-sm text-slate-600">
+          Portal password is intentionally read from the runtime environment, not saved in app settings.
+        </div>
+      </section>
+
+      <section className="mt-4 rounded-lg border border-slate-200 bg-white shadow-sm">
+        <SectionHeader icon={<Check className="h-5 w-5" />} title="Auto Answers" />
+        <div className="grid grid-cols-1 gap-5 p-5 lg:grid-cols-3">
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-slate-900">Work Authorization</h3>
+            <TextField label="Default Work Authorization" value={settings.applicationAutoAnswers.workAuthorization} onChange={(value) => setAutoAnswer("workAuthorization", value)} />
+            <TextField label="Default Sponsorship Required" value={settings.applicationAutoAnswers.needSponsorship} onChange={(value) => setAutoAnswer("needSponsorship", value)} />
+            <TextField label="India Work Authorization" value={settings.applicationAutoAnswers.indiaWorkAuthorization} onChange={(value) => setAutoAnswer("indiaWorkAuthorization", value)} />
+            <TextField label="India Sponsorship Required" value={settings.applicationAutoAnswers.indiaNeedSponsorship} onChange={(value) => setAutoAnswer("indiaNeedSponsorship", value)} />
+            <TextField label="Outside India Work Authorization" value={settings.applicationAutoAnswers.outsideIndiaWorkAuthorization} onChange={(value) => setAutoAnswer("outsideIndiaWorkAuthorization", value)} />
+            <TextField label="Outside India Sponsorship Required" value={settings.applicationAutoAnswers.outsideIndiaNeedSponsorship} onChange={(value) => setAutoAnswer("outsideIndiaNeedSponsorship", value)} />
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-slate-900">Relocation And Availability</h3>
+            <TextField label="Current Location" value={settings.applicationAutoAnswers.currentLocation} onChange={(value) => setAutoAnswer("currentLocation", value)} />
+            <TextField label="Willing To Relocate" value={settings.applicationAutoAnswers.willingToRelocate} onChange={(value) => setAutoAnswer("willingToRelocate", value)} />
+            <TextField label="Relocation Locations" value={settings.applicationAutoAnswers.relocateLocations} onChange={(value) => setAutoAnswer("relocateLocations", value)} />
+            <TextField label="Notice Period" value={settings.applicationAutoAnswers.noticePeriod} onChange={(value) => setAutoAnswer("noticePeriod", value)} />
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-slate-900">Salary</h3>
+            <TextField label="India Current CTC" value={settings.applicationAutoAnswers.indiaCurrentCtc} onChange={(value) => setAutoAnswer("indiaCurrentCtc", value)} />
+            <TextField label="India Expected CTC" value={settings.applicationAutoAnswers.indiaExpectedCtc} onChange={(value) => setAutoAnswer("indiaExpectedCtc", value)} />
+            <TextField label="UAE Current Annual" value={settings.applicationAutoAnswers.uaeCurrentAnnual} onChange={(value) => setAutoAnswer("uaeCurrentAnnual", value)} />
+            <TextField label="UAE Current Monthly" value={settings.applicationAutoAnswers.uaeCurrentMonthly} onChange={(value) => setAutoAnswer("uaeCurrentMonthly", value)} />
+            <TextField label="UAE Expected Annual" value={settings.applicationAutoAnswers.uaeExpectedAnnual} onChange={(value) => setAutoAnswer("uaeExpectedAnnual", value)} />
+            <TextField label="UAE Expected Monthly" value={settings.applicationAutoAnswers.uaeExpectedMonthly} onChange={(value) => setAutoAnswer("uaeExpectedMonthly", value)} />
+          </div>
+        </div>
+        <div className="border-t border-slate-100 px-5 py-3 text-sm text-slate-600">
+          These answers are used only for known fields. Unknown screening questions still require review unless final-submit rules are explicitly enabled.
+        </div>
+      </section>
+
+      <section className="mt-4 rounded-lg border border-slate-200 bg-white shadow-sm">
         <SectionHeader icon={<SlidersHorizontal className="h-5 w-5" />} title="Advanced Settings" />
         <div className="grid grid-cols-2 gap-3 p-5 md:grid-cols-4">
           <NumberField label="LLM RPM" value={settings.advanced.llmMaxRpm} min={1} onChange={(value) => setAdvanced("llmMaxRpm", value)} />
@@ -338,6 +457,28 @@ export default function SettingsClient() {
         </div>
       </section>
     </div>
+  );
+}
+
+function TextField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium text-slate-500">{label}</span>
+      <input
+        type="text"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15"
+      />
+    </label>
   );
 }
 

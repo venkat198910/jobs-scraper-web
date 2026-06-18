@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/utils/supabase/server";
 
 const QUEUE_TABLE = "application_queue";
@@ -60,6 +60,59 @@ export async function GET() {
           error instanceof Error
             ? error.message
             : "Failed to load application queue",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = (await request.json()) as {
+      id?: string;
+      status?: string;
+      run_mode?: string;
+    };
+
+    if (!body.id) {
+      return NextResponse.json(
+        { error: "Application queue ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const updates: Record<string, string> = {};
+    if (body.status) updates.status = body.status;
+    if (body.run_mode) updates.run_mode = body.run_mode;
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json(
+        { error: "No supported updates were provided" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from(QUEUE_TABLE)
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", body.id)
+      .select("*")
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({
+      item: normalizeItem(data, "table"),
+    });
+  } catch (error) {
+    console.error("Error updating application queue:", error);
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to update application queue",
       },
       { status: 500 }
     );
