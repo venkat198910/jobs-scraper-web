@@ -45,6 +45,23 @@ export type SettingsState = {
     headlessBrowser: boolean;
   };
   applicationAutoAnswers: {
+    country: string;
+    nationality: string;
+    currentJobTitle: string;
+    currentEmployer: string;
+    highestEducation: string;
+    degreeName: string;
+    university: string;
+    graduationYear: string;
+    bachelorDegree: string;
+    bachelorUniversity: string;
+    bachelorGraduationYear: string;
+    availabilityDate: string;
+    preferredWorkMode: string;
+    preferredEmploymentType: string;
+    preferredShift: string;
+    openToContract: string;
+    salaryNegotiable: string;
     workAuthorization: string;
     needSponsorship: string;
     indiaWorkAuthorization: string;
@@ -68,6 +85,11 @@ export type SettingsState = {
     llmRetryBaseDelay: number;
     llmDailyRequestBudget: number;
     llmRequestDelaySeconds: number;
+    jobsToScorePerRun: number;
+    jobsToCustomizePerRun: number;
+    jobsToRescorePerRun: number;
+    maxLinkedinJobsPerSearch: number;
+    maxCareersFutureJobsPerSearch: number;
     linkedinMaxStart: number;
     requestTimeout: number;
     maxRetries: number;
@@ -178,6 +200,23 @@ export const defaultSettings: SettingsState = {
     headlessBrowser: false,
   },
   applicationAutoAnswers: {
+    country: "India",
+    nationality: "Indian",
+    currentJobTitle: "Technical Lead",
+    currentEmployer: "Infinite Computer Solutions",
+    highestEducation: "MBA",
+    degreeName: "MBA",
+    university: "SV University (EAIMS), Tirupati",
+    graduationYear: "2012",
+    bachelorDegree: "B.Com (Computer Applications)",
+    bachelorUniversity: "SV University, Tirupati",
+    bachelorGraduationYear: "2010",
+    availabilityDate: "After 30 days notice",
+    preferredWorkMode: "Remote or Hybrid",
+    preferredEmploymentType: "Full-time",
+    preferredShift: "Flexible",
+    openToContract: "No",
+    salaryNegotiable: "Yes",
     workAuthorization: "No",
     needSponsorship: "Yes",
     indiaWorkAuthorization: "Yes",
@@ -201,6 +240,11 @@ export const defaultSettings: SettingsState = {
     llmRetryBaseDelay: 10,
     llmDailyRequestBudget: 0,
     llmRequestDelaySeconds: 8,
+    jobsToScorePerRun: 10,
+    jobsToCustomizePerRun: 5,
+    jobsToRescorePerRun: 5,
+    maxLinkedinJobsPerSearch: 20,
+    maxCareersFutureJobsPerSearch: 10,
     linkedinMaxStart: 1,
     requestTimeout: 30,
     maxRetries: 3,
@@ -357,6 +401,23 @@ export function normalizeSettings(value: unknown): SettingsState {
       ),
     },
     applicationAutoAnswers: {
+      country: stringValue(applicationAutoAnswers.country, defaultSettings.applicationAutoAnswers.country),
+      nationality: stringValue(applicationAutoAnswers.nationality, defaultSettings.applicationAutoAnswers.nationality),
+      currentJobTitle: stringValue(applicationAutoAnswers.currentJobTitle, defaultSettings.applicationAutoAnswers.currentJobTitle),
+      currentEmployer: stringValue(applicationAutoAnswers.currentEmployer, defaultSettings.applicationAutoAnswers.currentEmployer),
+      highestEducation: stringValue(applicationAutoAnswers.highestEducation, defaultSettings.applicationAutoAnswers.highestEducation),
+      degreeName: stringValue(applicationAutoAnswers.degreeName, defaultSettings.applicationAutoAnswers.degreeName),
+      university: stringValue(applicationAutoAnswers.university, defaultSettings.applicationAutoAnswers.university),
+      graduationYear: stringValue(applicationAutoAnswers.graduationYear, defaultSettings.applicationAutoAnswers.graduationYear),
+      bachelorDegree: stringValue(applicationAutoAnswers.bachelorDegree, defaultSettings.applicationAutoAnswers.bachelorDegree),
+      bachelorUniversity: stringValue(applicationAutoAnswers.bachelorUniversity, defaultSettings.applicationAutoAnswers.bachelorUniversity),
+      bachelorGraduationYear: stringValue(applicationAutoAnswers.bachelorGraduationYear, defaultSettings.applicationAutoAnswers.bachelorGraduationYear),
+      availabilityDate: stringValue(applicationAutoAnswers.availabilityDate, defaultSettings.applicationAutoAnswers.availabilityDate),
+      preferredWorkMode: stringValue(applicationAutoAnswers.preferredWorkMode, defaultSettings.applicationAutoAnswers.preferredWorkMode),
+      preferredEmploymentType: stringValue(applicationAutoAnswers.preferredEmploymentType, defaultSettings.applicationAutoAnswers.preferredEmploymentType),
+      preferredShift: stringValue(applicationAutoAnswers.preferredShift, defaultSettings.applicationAutoAnswers.preferredShift),
+      openToContract: stringValue(applicationAutoAnswers.openToContract, defaultSettings.applicationAutoAnswers.openToContract),
+      salaryNegotiable: stringValue(applicationAutoAnswers.salaryNegotiable, defaultSettings.applicationAutoAnswers.salaryNegotiable),
       workAuthorization: stringValue(applicationAutoAnswers.workAuthorization, defaultSettings.applicationAutoAnswers.workAuthorization),
       needSponsorship: stringValue(applicationAutoAnswers.needSponsorship, defaultSettings.applicationAutoAnswers.needSponsorship),
       indiaWorkAuthorization: stringValue(applicationAutoAnswers.indiaWorkAuthorization, defaultSettings.applicationAutoAnswers.indiaWorkAuthorization),
@@ -380,6 +441,11 @@ export function normalizeSettings(value: unknown): SettingsState {
       llmRetryBaseDelay: boundedNumber(advanced.llmRetryBaseDelay, defaultSettings.advanced.llmRetryBaseDelay, 1, 300),
       llmDailyRequestBudget: boundedNumber(advanced.llmDailyRequestBudget, defaultSettings.advanced.llmDailyRequestBudget, 0, 10000),
       llmRequestDelaySeconds: boundedNumber(advanced.llmRequestDelaySeconds, defaultSettings.advanced.llmRequestDelaySeconds, 0, 120),
+      jobsToScorePerRun: boundedNumber(advanced.jobsToScorePerRun, defaultSettings.advanced.jobsToScorePerRun, 1, 1000),
+      jobsToCustomizePerRun: boundedNumber(advanced.jobsToCustomizePerRun, defaultSettings.advanced.jobsToCustomizePerRun, 1, 1000),
+      jobsToRescorePerRun: boundedNumber(advanced.jobsToRescorePerRun, defaultSettings.advanced.jobsToRescorePerRun, 1, 1000),
+      maxLinkedinJobsPerSearch: boundedNumber(advanced.maxLinkedinJobsPerSearch, defaultSettings.advanced.maxLinkedinJobsPerSearch, 1, 1000),
+      maxCareersFutureJobsPerSearch: boundedNumber(advanced.maxCareersFutureJobsPerSearch, defaultSettings.advanced.maxCareersFutureJobsPerSearch, 1, 1000),
       linkedinMaxStart: boundedNumber(advanced.linkedinMaxStart, defaultSettings.advanced.linkedinMaxStart, 0, 1000),
       requestTimeout: boundedNumber(advanced.requestTimeout, defaultSettings.advanced.requestTimeout, 5, 300),
       maxRetries: boundedNumber(advanced.maxRetries, defaultSettings.advanced.maxRetries, 0, 10),

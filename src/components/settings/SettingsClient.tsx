@@ -401,33 +401,62 @@ export default function SettingsClient() {
 
       <section className="mt-4 rounded-lg border border-slate-200 bg-white shadow-sm">
         <SectionHeader icon={<Check className="h-5 w-5" />} title="Auto Answers" />
-        <div className="grid grid-cols-1 gap-5 p-5 lg:grid-cols-3">
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-900">Work Authorization</h3>
+        <div className="space-y-6 p-5">
+          <div>
+            <h3 className="mb-3 text-sm font-semibold text-slate-900">Candidate Details</h3>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <TextField label="Country" value={settings.applicationAutoAnswers.country} onChange={(value) => setAutoAnswer("country", value)} />
+            <TextField label="Nationality" value={settings.applicationAutoAnswers.nationality} onChange={(value) => setAutoAnswer("nationality", value)} />
+            <TextField label="Current Job Title" value={settings.applicationAutoAnswers.currentJobTitle} onChange={(value) => setAutoAnswer("currentJobTitle", value)} />
+            <TextField label="Current Employer" value={settings.applicationAutoAnswers.currentEmployer} onChange={(value) => setAutoAnswer("currentEmployer", value)} />
+            <TextField label="Highest Education" value={settings.applicationAutoAnswers.highestEducation} onChange={(value) => setAutoAnswer("highestEducation", value)} />
+            <TextField label="Degree" value={settings.applicationAutoAnswers.degreeName} onChange={(value) => setAutoAnswer("degreeName", value)} />
+            <TextField label="University" value={settings.applicationAutoAnswers.university} onChange={(value) => setAutoAnswer("university", value)} />
+            <TextField label="Graduation Year" value={settings.applicationAutoAnswers.graduationYear} onChange={(value) => setAutoAnswer("graduationYear", value)} />
+            <TextField label="Bachelor Degree" value={settings.applicationAutoAnswers.bachelorDegree} onChange={(value) => setAutoAnswer("bachelorDegree", value)} />
+            <TextField label="Bachelor University" value={settings.applicationAutoAnswers.bachelorUniversity} onChange={(value) => setAutoAnswer("bachelorUniversity", value)} />
+            <TextField label="Bachelor Graduation Year" value={settings.applicationAutoAnswers.bachelorGraduationYear} onChange={(value) => setAutoAnswer("bachelorGraduationYear", value)} />
+            <TextField label="Preferred Work Mode" value={settings.applicationAutoAnswers.preferredWorkMode} onChange={(value) => setAutoAnswer("preferredWorkMode", value)} />
+            <TextField label="Employment Type" value={settings.applicationAutoAnswers.preferredEmploymentType} onChange={(value) => setAutoAnswer("preferredEmploymentType", value)} />
+            <TextField label="Preferred Shift" value={settings.applicationAutoAnswers.preferredShift} onChange={(value) => setAutoAnswer("preferredShift", value)} />
+            <TextField label="Open To Contract" value={settings.applicationAutoAnswers.openToContract} onChange={(value) => setAutoAnswer("openToContract", value)} />
+            <TextField label="Salary Negotiable" value={settings.applicationAutoAnswers.salaryNegotiable} onChange={(value) => setAutoAnswer("salaryNegotiable", value)} />
+            </div>
+          </div>
+
+          <div className="border-t border-slate-100 pt-5">
+            <h3 className="mb-3 text-sm font-semibold text-slate-900">Work Authorization</h3>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             <TextField label="Default Work Authorization" value={settings.applicationAutoAnswers.workAuthorization} onChange={(value) => setAutoAnswer("workAuthorization", value)} />
             <TextField label="Default Sponsorship Required" value={settings.applicationAutoAnswers.needSponsorship} onChange={(value) => setAutoAnswer("needSponsorship", value)} />
             <TextField label="India Work Authorization" value={settings.applicationAutoAnswers.indiaWorkAuthorization} onChange={(value) => setAutoAnswer("indiaWorkAuthorization", value)} />
             <TextField label="India Sponsorship Required" value={settings.applicationAutoAnswers.indiaNeedSponsorship} onChange={(value) => setAutoAnswer("indiaNeedSponsorship", value)} />
             <TextField label="Outside India Work Authorization" value={settings.applicationAutoAnswers.outsideIndiaWorkAuthorization} onChange={(value) => setAutoAnswer("outsideIndiaWorkAuthorization", value)} />
             <TextField label="Outside India Sponsorship Required" value={settings.applicationAutoAnswers.outsideIndiaNeedSponsorship} onChange={(value) => setAutoAnswer("outsideIndiaNeedSponsorship", value)} />
+            </div>
           </div>
 
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-900">Relocation And Availability</h3>
+          <div className="border-t border-slate-100 pt-5">
+            <h3 className="mb-3 text-sm font-semibold text-slate-900">Relocation And Availability</h3>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             <TextField label="Current Location" value={settings.applicationAutoAnswers.currentLocation} onChange={(value) => setAutoAnswer("currentLocation", value)} />
             <TextField label="Willing To Relocate" value={settings.applicationAutoAnswers.willingToRelocate} onChange={(value) => setAutoAnswer("willingToRelocate", value)} />
             <TextField label="Relocation Locations" value={settings.applicationAutoAnswers.relocateLocations} onChange={(value) => setAutoAnswer("relocateLocations", value)} />
             <TextField label="Notice Period" value={settings.applicationAutoAnswers.noticePeriod} onChange={(value) => setAutoAnswer("noticePeriod", value)} />
+            <TextField label="Available From" value={settings.applicationAutoAnswers.availabilityDate} onChange={(value) => setAutoAnswer("availabilityDate", value)} />
+            </div>
           </div>
 
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-900">Salary</h3>
+          <div className="border-t border-slate-100 pt-5">
+            <h3 className="mb-3 text-sm font-semibold text-slate-900">Salary</h3>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             <TextField label="India Current CTC" value={settings.applicationAutoAnswers.indiaCurrentCtc} onChange={(value) => setAutoAnswer("indiaCurrentCtc", value)} />
             <TextField label="India Expected CTC" value={settings.applicationAutoAnswers.indiaExpectedCtc} onChange={(value) => setAutoAnswer("indiaExpectedCtc", value)} />
             <TextField label="UAE Current Annual" value={settings.applicationAutoAnswers.uaeCurrentAnnual} onChange={(value) => setAutoAnswer("uaeCurrentAnnual", value)} />
             <TextField label="UAE Current Monthly" value={settings.applicationAutoAnswers.uaeCurrentMonthly} onChange={(value) => setAutoAnswer("uaeCurrentMonthly", value)} />
             <TextField label="UAE Expected Annual" value={settings.applicationAutoAnswers.uaeExpectedAnnual} onChange={(value) => setAutoAnswer("uaeExpectedAnnual", value)} />
             <TextField label="UAE Expected Monthly" value={settings.applicationAutoAnswers.uaeExpectedMonthly} onChange={(value) => setAutoAnswer("uaeExpectedMonthly", value)} />
+            </div>
           </div>
         </div>
         <div className="border-t border-slate-100 px-5 py-3 text-sm text-slate-600">
@@ -443,6 +472,11 @@ export default function SettingsClient() {
           <NumberField label="LLM Backoff" value={settings.advanced.llmRetryBaseDelay} min={1} onChange={(value) => setAdvanced("llmRetryBaseDelay", value)} />
           <NumberField label="LLM Daily Budget" value={settings.advanced.llmDailyRequestBudget} min={0} onChange={(value) => setAdvanced("llmDailyRequestBudget", value)} />
           <NumberField label="LLM Delay" value={settings.advanced.llmRequestDelaySeconds} min={0} onChange={(value) => setAdvanced("llmRequestDelaySeconds", value)} />
+          <NumberField label="Jobs To Score" value={settings.advanced.jobsToScorePerRun} min={1} onChange={(value) => setAdvanced("jobsToScorePerRun", value)} />
+          <NumberField label="Jobs To Customize" value={settings.advanced.jobsToCustomizePerRun} min={1} onChange={(value) => setAdvanced("jobsToCustomizePerRun", value)} />
+          <NumberField label="Jobs To Rescore" value={settings.advanced.jobsToRescorePerRun} min={1} onChange={(value) => setAdvanced("jobsToRescorePerRun", value)} />
+          <NumberField label="LinkedIn Jobs/Search" value={settings.advanced.maxLinkedinJobsPerSearch} min={1} onChange={(value) => setAdvanced("maxLinkedinJobsPerSearch", value)} />
+          <NumberField label="CareersFuture Jobs/Search" value={settings.advanced.maxCareersFutureJobsPerSearch} min={1} onChange={(value) => setAdvanced("maxCareersFutureJobsPerSearch", value)} />
           <NumberField label="LinkedIn Pages" value={settings.advanced.linkedinMaxStart} min={0} onChange={(value) => setAdvanced("linkedinMaxStart", value)} />
           <NumberField label="Request Timeout" value={settings.advanced.requestTimeout} min={5} onChange={(value) => setAdvanced("requestTimeout", value)} />
           <NumberField label="HTTP Retries" value={settings.advanced.maxRetries} min={0} onChange={(value) => setAdvanced("maxRetries", value)} />
