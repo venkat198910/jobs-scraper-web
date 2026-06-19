@@ -206,7 +206,7 @@ export const defaultSettings: SettingsState = {
     currentEmployer: "Infinite Computer Solutions",
     highestEducation: "MBA",
     degreeName: "MBA",
-    university: "SV University (EAIMS), Tirupati",
+    university: "SV University, Tirupati",
     graduationYear: "2012",
     bachelorDegree: "B.Com (Computer Applications)",
     bachelorUniversity: "SV University, Tirupati",
