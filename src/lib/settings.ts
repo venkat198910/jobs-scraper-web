@@ -40,6 +40,7 @@ export type SettingsState = {
   };
   applicationAutomation: {
     maxJobAgeMinutes: number;
+    maxDailyApplications: number;
     allowFinalSubmit: boolean;
     allowPortalLogin: boolean;
     allowPortalRegister: boolean;
@@ -195,7 +196,8 @@ export const defaultSettings: SettingsState = {
     pythonExperience: "3+",
   },
   applicationAutomation: {
-    maxJobAgeMinutes: 60,
+    maxJobAgeMinutes: 120,
+    maxDailyApplications: 30,
     allowFinalSubmit: false,
     allowPortalLogin: false,
     allowPortalRegister: false,
@@ -391,6 +393,12 @@ export function normalizeSettings(value: unknown): SettingsState {
         defaultSettings.applicationAutomation.maxJobAgeMinutes,
         1,
         1440
+      ),
+      maxDailyApplications: boundedNumber(
+        applicationAutomation.maxDailyApplications,
+        defaultSettings.applicationAutomation.maxDailyApplications,
+        0,
+        200
       ),
       allowFinalSubmit: Boolean(
         applicationAutomation.allowFinalSubmit ?? defaultSettings.applicationAutomation.allowFinalSubmit

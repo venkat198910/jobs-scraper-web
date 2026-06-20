@@ -18,7 +18,7 @@ import {
 import MarkdownRenderer from "./MarkdownRenderer";
 import { Job } from "@/types";
 import { useRouter, useSearchParams } from "next/navigation"; // Added useSearchParams
-import { formatJobDate, getJobPostingDate } from "@/lib/jobs/dates";
+import PostedDate from "./PostedDate";
 
 interface TopMatchesListProps {
   jobs: Job[];
@@ -282,7 +282,7 @@ export default function TopMatchesList({
                       <div className="mt-1 flex items-center text-sm text-gray-500">
                         <CalendarDays className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
                         <span className="truncate">
-                          Posted {formatJobDate(getJobPostingDate(job))}
+                          <PostedDate job={job} />
                         </span>
                       </div>
                       <div className="mt-1 flex items-center text-xs text-gray-400">
@@ -367,7 +367,7 @@ export default function TopMatchesList({
                     <div className="flex items-center">
                       <CalendarDays className="h-4 w-4 mr-1.5 text-gray-500" />
                       <span>
-                        Posted {formatJobDate(getJobPostingDate(selectedJob))}
+                        <PostedDate job={selectedJob} />
                       </span>
                     </div>
                     <div className="flex items-center">

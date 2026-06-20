@@ -368,13 +368,20 @@ export default function SettingsClient() {
 
       <section className="mt-4 rounded-lg border border-slate-200 bg-white shadow-sm">
         <SectionHeader icon={<SlidersHorizontal className="h-5 w-5" />} title="Application Automation" />
-        <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-[14rem_1fr]">
+        <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-[14rem_14rem_1fr]">
           <NumberField
             label="Max Job Age Minutes"
             value={settings.applicationAutomation.maxJobAgeMinutes}
             min={1}
             max={1440}
             onChange={(value) => setAutomation("maxJobAgeMinutes", value)}
+          />
+          <NumberField
+            label="Max Daily Applications"
+            value={settings.applicationAutomation.maxDailyApplications}
+            min={0}
+            max={200}
+            onChange={(value) => setAutomation("maxDailyApplications", value)}
           />
           <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
             <TogglePill

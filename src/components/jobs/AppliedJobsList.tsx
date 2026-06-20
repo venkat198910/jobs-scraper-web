@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Job } from "@/types";
 import { useRouter } from "next/navigation";
-import { formatJobDate, getJobPostingDate } from "@/lib/jobs/dates";
+import PostedDate from "./PostedDate";
 
 // Status options for applied jobs
 const JOB_STATUS_OPTIONS = [
@@ -188,7 +188,7 @@ export default function AppliedJobsList({
                       </div>
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-1.5" />
-                        <span>Posted {formatJobDate(getJobPostingDate(job))}</span>
+                        <PostedDate job={job} />
                       </div>
                     </div>
                   </div>
