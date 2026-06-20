@@ -196,7 +196,7 @@ export const defaultSettings: SettingsState = {
     pythonExperience: "3+",
   },
   applicationAutomation: {
-    maxJobAgeMinutes: 120,
+    maxJobAgeMinutes: 300,
     maxDailyApplications: 30,
     allowFinalSubmit: false,
     allowPortalLogin: false,
