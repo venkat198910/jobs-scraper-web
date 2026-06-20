@@ -9,6 +9,7 @@ import {
   FileText,
   Play,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 
 type ApplicationQueueItem = {
@@ -39,12 +40,18 @@ type QueueUpdateResponse = {
   error?: string;
 };
 
+type QueueDeleteResponse = {
+  ok?: boolean;
+  error?: string;
+};
+
 export default function ApplicationQueueClient() {
   const [items, setItems] = useState<ApplicationQueueItem[]>([]);
   const [source, setSource] = useState<"table" | "storage" | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<{
     key: "status" | "portal" | "run_mode" | null;
     value: string | null;
@@ -157,6 +164,51 @@ export default function ApplicationQueueClient() {
     }
   };
 
+  const deleteQueueItem = async (item: ApplicationQueueItem) => {
+    const deleteKey = item.id ?? `${item.job_id}-${item.application_type}`;
+    if (!deleteKey) {
+      alert("This row is missing the information needed to delete it.");
+      return;
+    }
+
+    setDeletingId(deleteKey);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/application-queue", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: item.id,
+          job_id: item.job_id,
+          application_type: item.application_type,
+          source: item.source,
+        }),
+      });
+      const payload = (await response.json()) as QueueDeleteResponse;
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error ?? "Failed to delete application");
+      }
+
+      setItems((current) =>
+        current.filter((currentItem) => {
+          const currentKey =
+            currentItem.id ?? `${currentItem.job_id}-${currentItem.application_type}`;
+          return currentKey !== deleteKey;
+        })
+      );
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Failed to delete application"
+      );
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -265,7 +317,11 @@ export default function ApplicationQueueClient() {
                   activeFilter={activeFilter}
                   onFilter={applyFilter}
                   onUpdate={updateQueueItem}
+                  onDelete={deleteQueueItem}
                   isUpdating={updatingId === item.id}
+                  isDeleting={
+                    deletingId === (item.id ?? `${item.job_id}-${item.application_type}`)
+                  }
                 />
               ))}
             </div>
@@ -306,7 +362,9 @@ function ApplicationRow({
   activeFilter,
   onFilter,
   onUpdate,
+  onDelete,
   isUpdating,
+  isDeleting,
 }: {
   item: ApplicationQueueItem;
   activeFilter: {
@@ -318,7 +376,9 @@ function ApplicationRow({
     item: ApplicationQueueItem,
     updates: { status?: string; run_mode?: string }
   ) => Promise<void>;
+  onDelete: (item: ApplicationQueueItem) => Promise<void>;
   isUpdating: boolean;
+  isDeleting: boolean;
 }) {
   const title = getNoteText(item, "job_title") ?? "Untitled job";
   const company = getNoteText(item, "company") ?? "Unknown company";
@@ -411,6 +471,16 @@ function ApplicationRow({
             Mark Submitted
           </button>
         )}
+        <button
+          type="button"
+          onClick={() => void onDelete(item)}
+          disabled={isDeleting}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+          title="Delete from queue"
+          aria-label="Delete from queue"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
       </div>
     </article>
   );

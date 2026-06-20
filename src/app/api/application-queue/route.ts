@@ -119,6 +119,59 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = (await request.json()) as {
+      id?: string;
+      job_id?: string;
+      application_type?: string;
+      source?: "table" | "storage";
+    };
+
+    const supabase = await createSupabaseServerClient();
+
+    if (body.source === "storage") {
+      if (!body.job_id || !body.application_type) {
+        return NextResponse.json(
+          { error: "job_id and application_type are required for storage deletes" },
+          { status: 400 }
+        );
+      }
+
+      const path = `${QUEUE_PREFIX}/${body.job_id}_${body.application_type}.json`;
+      const { error } = await supabase.storage.from(QUEUE_BUCKET).remove([path]);
+
+      if (error) throw error;
+
+      return NextResponse.json({ ok: true });
+    }
+
+    if (!body.id) {
+      return NextResponse.json(
+        { error: "Application queue ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const { error } = await supabase.from(QUEUE_TABLE).delete().eq("id", body.id);
+
+    if (error) throw error;
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("Error deleting application queue item:", error);
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to delete application queue item",
+      },
+      { status: 500 }
+    );
+  }
+}
+
 function isMissingTableError(error: { code?: string; message?: string }) {
   return (
     error.code === "42P01" ||
