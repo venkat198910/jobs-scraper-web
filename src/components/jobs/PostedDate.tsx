@@ -28,9 +28,9 @@ export default function PostedDate({ job }: PostedDateProps) {
   const absoluteDate = formatJobDate(postedAt);
 
   return (
-    <span>
-      Posted {absoluteDate}
-      {relativeAge ? ` (${relativeAge})` : ""}
+    <span suppressHydrationWarning>
+      Posted {relativeAge ? `${relativeAge} · ` : ""}
+      {absoluteDate}
     </span>
   );
 }
