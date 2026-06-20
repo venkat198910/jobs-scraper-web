@@ -42,6 +42,7 @@ export type SettingsState = {
     maxJobAgeMinutes: number;
     allowFinalSubmit: boolean;
     allowPortalLogin: boolean;
+    allowPortalRegister: boolean;
     headlessBrowser: boolean;
   };
   applicationAutoAnswers: {
@@ -197,6 +198,7 @@ export const defaultSettings: SettingsState = {
     maxJobAgeMinutes: 60,
     allowFinalSubmit: false,
     allowPortalLogin: false,
+    allowPortalRegister: false,
     headlessBrowser: false,
   },
   applicationAutoAnswers: {
@@ -395,6 +397,9 @@ export function normalizeSettings(value: unknown): SettingsState {
       ),
       allowPortalLogin: Boolean(
         applicationAutomation.allowPortalLogin ?? defaultSettings.applicationAutomation.allowPortalLogin
+      ),
+      allowPortalRegister: Boolean(
+        applicationAutomation.allowPortalRegister ?? defaultSettings.applicationAutomation.allowPortalRegister
       ),
       headlessBrowser: Boolean(
         applicationAutomation.headlessBrowser ?? defaultSettings.applicationAutomation.headlessBrowser

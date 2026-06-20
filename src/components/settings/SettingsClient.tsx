@@ -376,11 +376,16 @@ export default function SettingsClient() {
             max={1440}
             onChange={(value) => setAutomation("maxJobAgeMinutes", value)}
           />
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
             <TogglePill
               label="Allow Portal Login"
               checked={settings.applicationAutomation.allowPortalLogin}
               onClick={() => setAutomation("allowPortalLogin", !settings.applicationAutomation.allowPortalLogin)}
+            />
+            <TogglePill
+              label="Allow Portal Register"
+              checked={settings.applicationAutomation.allowPortalRegister}
+              onClick={() => setAutomation("allowPortalRegister", !settings.applicationAutomation.allowPortalRegister)}
             />
             <TogglePill
               label="Allow Final Submit"
