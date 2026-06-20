@@ -157,6 +157,9 @@ export default function TopMatchesList({
       finalInterestValue = newInterestValue;
     }
 
+    const shouldMoveToExpired =
+      finalInterestValue === false && selectedJob.job_state !== "expired";
+
     try {
       const response = await fetch(`/api/jobs/${selectedJob.job_id}`, {
         method: "PATCH",
@@ -165,6 +168,13 @@ export default function TopMatchesList({
         },
         body: JSON.stringify({
           is_interested: finalInterestValue,
+          ...(shouldMoveToExpired
+            ? {
+                is_active: false,
+                job_state: "expired",
+                last_checked: new Date().toISOString(),
+              }
+            : {}),
         }),
       });
 
@@ -183,7 +193,9 @@ export default function TopMatchesList({
         finalInterestValue === true
           ? "Marked as interested"
           : finalInterestValue === false
-            ? "Marked as not interested"
+            ? shouldMoveToExpired
+              ? "Moved to Expired Jobs"
+              : "Marked as not interested"
             : "Interest status cleared";
       showToast(message, "success");
       router.refresh(); // Refresh the page to show updated jobs

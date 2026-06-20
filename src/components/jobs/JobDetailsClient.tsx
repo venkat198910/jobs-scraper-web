@@ -93,6 +93,9 @@ export default function JobDetailsClient({
       finalInterestValue = newInterestValue;
     }
 
+    const shouldMoveToExpired =
+      finalInterestValue === false && job.job_state !== "expired";
+
     try {
       const response = await fetch(`/api/jobs/${job.job_id}`, {
         method: "PATCH",
@@ -101,6 +104,13 @@ export default function JobDetailsClient({
         },
         body: JSON.stringify({
           is_interested: finalInterestValue,
+          ...(shouldMoveToExpired
+            ? {
+                is_active: false,
+                job_state: "expired",
+                last_checked: new Date().toISOString(),
+              }
+            : {}),
         }),
       });
 
@@ -118,8 +128,10 @@ export default function JobDetailsClient({
         finalInterestValue === true
           ? "Marked as interested"
           : finalInterestValue === false
-          ? "Marked as not interested"
-          : "Interest status cleared";
+            ? shouldMoveToExpired
+              ? "Moved to Expired Jobs"
+              : "Marked as not interested"
+            : "Interest status cleared";
       showToast(message, "success");
       router.refresh();
     } catch (error) {
