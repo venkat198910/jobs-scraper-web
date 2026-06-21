@@ -81,6 +81,7 @@ export type SettingsState = {
     uaeExpectedAnnual: string;
     uaeExpectedMonthly: string;
   };
+  applicationQuestionAnswers: Record<string, string>;
   advanced: {
     llmMaxRpm: number;
     llmMaxRetries: number;
@@ -196,7 +197,7 @@ export const defaultSettings: SettingsState = {
     pythonExperience: "3+",
   },
   applicationAutomation: {
-    maxJobAgeMinutes: 300,
+    maxJobAgeMinutes: 720,
     maxDailyApplications: 30,
     allowFinalSubmit: false,
     allowPortalLogin: false,
@@ -237,6 +238,34 @@ export const defaultSettings: SettingsState = {
     uaeCurrentMonthly: "10300 AED",
     uaeExpectedAnnual: "300000 AED",
     uaeExpectedMonthly: "25000 AED",
+  },
+  applicationQuestionAnswers: {
+    microservices: "5",
+    "representational state transfer": "7",
+    rest: "7",
+    java: "0",
+    devops: "7",
+    sre: "7",
+    "site reliability": "7",
+    aws: "6",
+    cloud: "6",
+    kubernetes: "5",
+    terraform: "5",
+    python: "3",
+    "ci cd": "7",
+    cicd: "7",
+    jenkins: "7",
+    "github actions": "5",
+    docker: "5",
+    linux: "8",
+    ansible: "4",
+    prometheus: "5",
+    grafana: "5",
+    "notice period": "30",
+    "current ctc": "31",
+    "expected ctc": "50",
+    "current gross compensation": "31",
+    "expected gross compensation": "50",
   },
   advanced: {
     llmMaxRpm: 10,
@@ -349,6 +378,10 @@ export function normalizeSettings(value: unknown): SettingsState {
     partial.applicationAutoAnswers && typeof partial.applicationAutoAnswers === "object"
       ? (partial.applicationAutoAnswers as Partial<SettingsState["applicationAutoAnswers"]>)
       : {};
+  const applicationQuestionAnswers =
+    partial.applicationQuestionAnswers && typeof partial.applicationQuestionAnswers === "object"
+      ? (partial.applicationQuestionAnswers as Record<string, unknown>)
+      : {};
 
   return {
     locations: stringArray(partial.locations, defaultSettings.locations),
@@ -448,6 +481,7 @@ export function normalizeSettings(value: unknown): SettingsState {
       uaeExpectedAnnual: stringValue(applicationAutoAnswers.uaeExpectedAnnual, defaultSettings.applicationAutoAnswers.uaeExpectedAnnual),
       uaeExpectedMonthly: stringValue(applicationAutoAnswers.uaeExpectedMonthly, defaultSettings.applicationAutoAnswers.uaeExpectedMonthly),
     },
+    applicationQuestionAnswers: normalizeQuestionAnswers(applicationQuestionAnswers),
     advanced: {
       llmMaxRpm: boundedNumber(advanced.llmMaxRpm, defaultSettings.advanced.llmMaxRpm, 1, 120),
       llmMaxRetries: boundedNumber(advanced.llmMaxRetries, defaultSettings.advanced.llmMaxRetries, 0, 10),
@@ -481,4 +515,20 @@ export function normalizeSettings(value: unknown): SettingsState {
       ),
     },
   };
+}
+
+export function normalizeQuestionKey(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function normalizeQuestionAnswers(value: Record<string, unknown>) {
+  const answers: Record<string, string> = { ...defaultSettings.applicationQuestionAnswers };
+
+  Object.entries(value).forEach(([rawKey, rawAnswer]) => {
+    const key = normalizeQuestionKey(rawKey);
+    const answer = String(rawAnswer ?? "").trim();
+    if (key && answer) answers[key] = answer;
+  });
+
+  return answers;
 }

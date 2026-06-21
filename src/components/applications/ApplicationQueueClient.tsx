@@ -7,10 +7,12 @@ import {
   ClipboardCheck,
   ExternalLink,
   FileText,
+  MessageSquareText,
   Play,
   RefreshCw,
   Trash2,
 } from "lucide-react";
+import { normalizeQuestionKey, normalizeSettings } from "@/lib/settings";
 
 type ApplicationQueueItem = {
   id?: string;
@@ -43,6 +45,13 @@ type QueueUpdateResponse = {
 type QueueDeleteResponse = {
   ok?: boolean;
   error?: string;
+};
+
+type MissingQuestion = {
+  label: string;
+  key: string;
+  suggestedAnswer: string;
+  known: boolean;
 };
 
 export default function ApplicationQueueClient() {
@@ -384,106 +393,209 @@ function ApplicationRow({
   const company = getNoteText(item, "company") ?? "Unknown company";
   const location = getNoteText(item, "location");
   const createdAt = formatDateTime(item.created_at);
+  const missingQuestions = getMissingQuestions(item);
 
   return (
-    <article className="grid gap-4 px-5 py-4 lg:grid-cols-[1fr_auto] lg:items-center">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="truncate text-base font-semibold text-slate-950">
-            {title}
-          </h3>
-          {typeof item.score === "number" && (
-            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
-              {item.score}
-            </span>
+    <article className="px-5 py-4">
+      <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="truncate text-base font-semibold text-slate-950">
+              {title}
+            </h3>
+            {typeof item.score === "number" && (
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                {item.score}
+              </span>
+            )}
+          </div>
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-slate-500">
+            <span>{company}</span>
+            {location && <span>{location}</span>}
+            {createdAt && <span>{createdAt}</span>}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+            <FilterBadge
+              active={activeFilter.key === "status" && activeFilter.value === item.status}
+              onClick={() => onFilter("status", item.status)}
+            >
+              {item.status ?? "unknown"}
+            </FilterBadge>
+            <FilterBadge
+              active={activeFilter.key === "portal" && activeFilter.value === item.portal}
+              onClick={() => onFilter("portal", item.portal)}
+            >
+              {item.portal ?? item.application_type ?? "portal"}
+            </FilterBadge>
+            <FilterBadge
+              active={activeFilter.key === "run_mode" && activeFilter.value === item.run_mode}
+              onClick={() => onFilter("run_mode", item.run_mode)}
+            >
+              {item.run_mode ?? "review"}
+            </FilterBadge>
+            {missingQuestions.length > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-amber-800 ring-1 ring-amber-200">
+                <MessageSquareText className="h-3.5 w-3.5" />
+                {missingQuestions.length} missing
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 lg:justify-end">
+          {item.status !== "review_started" && item.status !== "submitted" && (
+            <button
+              type="button"
+              onClick={() =>
+                void onUpdate(item, { status: "review_started", run_mode: "review" })
+              }
+              disabled={isUpdating}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Play className="h-4 w-4" />
+              Start Review
+            </button>
           )}
-        </div>
-        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-slate-500">
-          <span>{company}</span>
-          {location && <span>{location}</span>}
-          {createdAt && <span>{createdAt}</span>}
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
-          <FilterBadge
-            active={activeFilter.key === "status" && activeFilter.value === item.status}
-            onClick={() => onFilter("status", item.status)}
+          {item.resume_path && (
+            <button
+              type="button"
+              onClick={() => void openResume(item)}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+            >
+              <FileText className="h-4 w-4" />
+              Open Resume
+            </button>
+          )}
+          {item.apply_url && (
+            <a
+              href={item.apply_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              Open Job
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
+          {item.status !== "submitted" && (
+            <button
+              type="button"
+              onClick={() => void onUpdate(item, { status: "submitted" })}
+              disabled={isUpdating}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Mark Submitted
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => void onDelete(item)}
+            disabled={isDeleting}
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+            title="Delete from queue"
+            aria-label="Delete from queue"
           >
-            {item.status ?? "unknown"}
-          </FilterBadge>
-          <FilterBadge
-            active={activeFilter.key === "portal" && activeFilter.value === item.portal}
-            onClick={() => onFilter("portal", item.portal)}
-          >
-            {item.portal ?? item.application_type ?? "portal"}
-          </FilterBadge>
-          <FilterBadge
-            active={activeFilter.key === "run_mode" && activeFilter.value === item.run_mode}
-            onClick={() => onFilter("run_mode", item.run_mode)}
-          >
-            {item.run_mode ?? "review"}
-          </FilterBadge>
+            <Trash2 className="h-4 w-4" />
+            Delete
+          </button>
         </div>
       </div>
+      {missingQuestions.length > 0 && <MissingQuestionsPanel questions={missingQuestions} />}
+    </article>
+  );
+}
 
-      <div className="flex flex-wrap gap-2 lg:justify-end">
-        {item.status !== "review_started" && item.status !== "submitted" && (
-          <button
-            type="button"
-            onClick={() =>
-              void onUpdate(item, { status: "review_started", run_mode: "review" })
-            }
-            disabled={isUpdating}
-            className="inline-flex h-10 items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Play className="h-4 w-4" />
-            Start Review
-          </button>
-        )}
-        {item.resume_path && (
-          <button
-            type="button"
-            onClick={() => void openResume(item)}
-            className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
-          >
-            <FileText className="h-4 w-4" />
-            Open Resume
-          </button>
-        )}
-        {item.apply_url && (
-          <a
-            href={item.apply_url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-          >
-            Open Job
-            <ExternalLink className="h-4 w-4" />
-          </a>
-        )}
-        {item.status !== "submitted" && (
-          <button
-            type="button"
-            onClick={() => void onUpdate(item, { status: "submitted" })}
-            disabled={isUpdating}
-            className="inline-flex h-10 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            Mark Submitted
-          </button>
-        )}
+function MissingQuestionsPanel({ questions }: { questions: MissingQuestion[] }) {
+  const [answers, setAnswers] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      questions.map((question) => [
+        question.key || normalizeQuestionKey(question.label),
+        question.suggestedAnswer || "",
+      ])
+    )
+  );
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function saveAnswers() {
+    setIsSaving(true);
+    setMessage("");
+
+    try {
+      const currentResponse = await fetch("/api/settings", { cache: "no-store" });
+      const currentPayload = await currentResponse.json();
+      if (!currentResponse.ok) {
+        throw new Error(currentPayload.error || "Could not load settings.");
+      }
+
+      const currentSettings = normalizeSettings(currentPayload.settings);
+      const nextQuestionAnswers = { ...currentSettings.applicationQuestionAnswers };
+      Object.entries(answers).forEach(([key, answer]) => {
+        const normalizedKey = normalizeQuestionKey(key);
+        const trimmedAnswer = answer.trim();
+        if (normalizedKey && trimmedAnswer) nextQuestionAnswers[normalizedKey] = trimmedAnswer;
+      });
+
+      const saveResponse = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          settings: {
+            ...currentSettings,
+            applicationQuestionAnswers: nextQuestionAnswers,
+          },
+        }),
+      });
+      const savePayload = await saveResponse.json();
+      if (!saveResponse.ok) {
+        throw new Error(savePayload.error || "Could not save answers.");
+      }
+
+      setMessage("Saved for future auto-apply runs.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not save answers.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+      <div className="flex items-center gap-2 text-sm font-semibold text-amber-950">
+        <MessageSquareText className="h-4 w-4" />
+        Missing application details
+      </div>
+      <div className="mt-3 grid gap-3">
+        {questions.map((question) => {
+          const key = question.key || normalizeQuestionKey(question.label);
+          return (
+            <label key={key} className="grid gap-1 text-sm">
+              <span className="font-medium text-slate-800">{question.label}</span>
+              <input
+                value={answers[key] ?? ""}
+                onChange={(event) =>
+                  setAnswers((current) => ({ ...current, [key]: event.target.value }))
+                }
+                placeholder="Answer once and save"
+                className="h-10 rounded-lg border border-amber-200 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </label>
+          );
+        })}
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
         <button
           type="button"
-          onClick={() => void onDelete(item)}
-          disabled={isDeleting}
-          className="inline-flex h-10 items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-          title="Delete from queue"
-          aria-label="Delete from queue"
+          onClick={() => void saveAnswers()}
+          disabled={isSaving}
+          className="inline-flex h-10 items-center justify-center rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <Trash2 className="h-4 w-4" />
-          Delete
+          {isSaving ? "Saving..." : "Save Answers"}
         </button>
+        {message && <span className="text-sm text-amber-900">{message}</span>}
       </div>
-    </article>
+    </div>
   );
 }
 
@@ -538,6 +650,31 @@ async function openResume(item: ApplicationQueueItem) {
 function getNoteText(item: ApplicationQueueItem, key: string) {
   const value = item.notes?.[key];
   return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function getMissingQuestions(item: ApplicationQueueItem): MissingQuestion[] {
+  const value = item.notes?.missing_questions;
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") return null;
+      const record = entry as Record<string, unknown>;
+      const label = typeof record.label === "string" ? record.label.trim() : "";
+      const key =
+        typeof record.key === "string" && record.key.trim()
+          ? record.key.trim()
+          : normalizeQuestionKey(label);
+      if (!label || !key) return null;
+      return {
+        label,
+        key,
+        suggestedAnswer:
+          typeof record.suggestedAnswer === "string" ? record.suggestedAnswer : "",
+        known: Boolean(record.known),
+      };
+    })
+    .filter((question): question is MissingQuestion => Boolean(question));
 }
 
 function formatDateTime(value?: string) {
