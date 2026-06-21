@@ -14,15 +14,20 @@ interface PostedDateProps {
 
 export default function PostedDate({ job }: PostedDateProps) {
   const postedAt = getJobPostingDate(job);
-  const [mounted, setMounted] = useState(false);
+  const [nowTick, setNowTick] = useState(0);
 
   useEffect(() => {
-    setMounted(true);
+    setNowTick((value) => value + 1);
+    const interval = window.setInterval(() => {
+      setNowTick((value) => value + 1);
+    }, 60000);
+
+    return () => window.clearInterval(interval);
   }, []);
 
   const relativeAge = useMemo(
-    () => (mounted ? formatJobRelativeAge(postedAt) : null),
-    [mounted, postedAt],
+    () => formatJobRelativeAge(postedAt),
+    [postedAt, nowTick],
   );
 
   const absoluteDate = formatJobDate(postedAt);
