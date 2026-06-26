@@ -7,7 +7,6 @@ import {
   liveSessionFile,
   resolveAssistantDir,
   resolvePythonExecutable,
-  shouldUseLinkedinEasyApply,
 } from "../shared";
 
 export async function POST(request: NextRequest) {
@@ -39,9 +38,6 @@ export async function POST(request: NextRequest) {
     );
 
     const assistantDir = resolveAssistantDir();
-    const mode = shouldUseLinkedinEasyApply(body)
-      ? "auto-apply"
-      : "prepare-company-portal";
     const pythonExecutable = resolvePythonExecutable(assistantDir);
 
     const env = {
@@ -60,21 +56,13 @@ export async function POST(request: NextRequest) {
     };
 
     const args = [
-      "application_assistant.py",
-      "--mode",
-      mode,
+      "llm_application_agent.py",
       "--job-id",
       body.job_id,
-      "--limit",
-      "1",
-      "--min-score",
-      "0",
-      "--provider",
-      mode === "auto-apply" ? "linkedin" : "all",
+      "--max-steps",
+      "25",
       "--headless",
       "--allow-submit",
-      "--allow-login",
-      "--allow-register",
     ];
 
     const child = spawn(pythonExecutable, args, {
@@ -85,7 +73,7 @@ export async function POST(request: NextRequest) {
     });
     child.unref();
 
-    return NextResponse.json({ ok: true, sessionId, mode });
+    return NextResponse.json({ ok: true, sessionId, mode: "llm-apply-agent" });
   } catch (error) {
     return NextResponse.json(
       {

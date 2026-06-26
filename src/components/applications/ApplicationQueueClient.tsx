@@ -606,7 +606,7 @@ function AnswerAgentPanel({
           }));
           setMessage("Live agent is waiting for your answer.");
         }
-        if (["submitted", "manual_review_required", "timeout", "captcha_required", "portal_auth_required"].includes(session.status || "")) {
+        if (["submitted", "completed", "manual_review_required", "timeout", "captcha_required", "portal_auth_required", "otp_or_mfa_required", "llm_error", "max_steps_reached"].includes(session.status || "")) {
           setMessage(`Live agent status: ${session.status}`);
         }
       } catch {
@@ -673,7 +673,7 @@ function AnswerAgentPanel({
     }
 
     setIsLiveStarting(true);
-    setMessage("Starting live application agent...");
+      setMessage("Starting LLM apply agent...");
     try {
       const response = await fetch("/api/application-queue/live/start", {
         method: "POST",
@@ -690,7 +690,7 @@ function AnswerAgentPanel({
       }
       setLiveSessionId(payload.sessionId);
       setLiveSession({ status: "starting" });
-      setMessage("Live agent started. I will show the question here when the portal asks.");
+      setMessage("LLM apply agent started. It will fill/click automatically and ask only when it needs your input.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not start live agent.");
     } finally {
@@ -735,7 +735,7 @@ function AnswerAgentPanel({
     liveSession?.status === "waiting_for_answers"
       ? customQuestions.filter((question) => question.label.trim())
       : [];
-  const isLiveFinished = ["submitted", "manual_review_required", "timeout", "captcha_required", "portal_auth_required"].includes(
+  const isLiveFinished = ["submitted", "completed", "manual_review_required", "timeout", "captcha_required", "portal_auth_required", "otp_or_mfa_required", "llm_error", "max_steps_reached"].includes(
     liveSession?.status || ""
   );
 
@@ -744,7 +744,7 @@ function AnswerAgentPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-amber-950">
           <MessageSquareText className="h-4 w-4" />
-          Live application agent
+          LLM apply agent
         </div>
         {status && (
           <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-amber-900 ring-1 ring-amber-200">
@@ -753,7 +753,7 @@ function AnswerAgentPanel({
         )}
       </div>
       <p className="mt-2 text-sm text-amber-900">
-        Start the application run here. If the portal asks for missing details, the question appears below and your answer is sent back to the same running browser session.
+        Starts a real LLM browser agent for this job. It reads the page, fills known fields, uploads the resume, clicks through the application, and asks you only when an answer is genuinely missing.
       </p>
 
       <div className="mt-3 space-y-3 rounded-lg border border-amber-200 bg-white p-3">
@@ -761,7 +761,7 @@ function AnswerAgentPanel({
           <div className="max-w-3xl rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-800">
             {liveSession
               ? `Live status: ${liveSession.status || "starting"}`
-              : "Ready. Click Start Live Apply and I will continue until the portal needs your input or submits successfully."}
+              : "Ready. Click Start LLM Apply Agent. It will drive the application and pause here only for unknown answers."}
           </div>
         </div>
 
@@ -819,7 +819,7 @@ function AnswerAgentPanel({
           disabled={isLiveStarting || Boolean(liveSessionId && !isLiveFinished)}
           className="inline-flex h-10 items-center justify-center rounded-lg bg-amber-600 px-4 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isLiveStarting ? "Starting..." : liveSessionId && !isLiveFinished ? "Live Agent Running" : "Start Live Apply"}
+          {isLiveStarting ? "Starting..." : liveSessionId && !isLiveFinished ? "LLM Agent Running" : "Start LLM Apply Agent"}
         </button>
         <button
           type="button"
