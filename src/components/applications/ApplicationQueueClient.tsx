@@ -394,6 +394,11 @@ function ApplicationRow({
   const location = getNoteText(item, "location");
   const createdAt = formatDateTime(item.created_at);
   const missingQuestions = getMissingQuestions(item);
+  const showAnswerAgent =
+    missingQuestions.length > 0 ||
+    ["manual_review_required", "review_started", "portal_auth_required", "company_portal_review"].includes(
+      item.status ?? ""
+    );
 
   return (
     <article className="px-5 py-4">
@@ -437,6 +442,12 @@ function ApplicationRow({
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-amber-800 ring-1 ring-amber-200">
                 <MessageSquareText className="h-3.5 w-3.5" />
                 {missingQuestions.length} missing
+              </span>
+            )}
+            {showAnswerAgent && missingQuestions.length === 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-blue-800 ring-1 ring-blue-200">
+                <MessageSquareText className="h-3.5 w-3.5" />
+                answer agent
               </span>
             )}
           </div>
@@ -501,22 +512,68 @@ function ApplicationRow({
           </button>
         </div>
       </div>
-      {missingQuestions.length > 0 && <MissingQuestionsPanel questions={missingQuestions} />}
+      {showAnswerAgent && (
+        <AnswerAgentPanel
+          questions={missingQuestions}
+          messages={getLastMessages(item)}
+          status={item.status}
+        />
+      )}
     </article>
   );
 }
 
-function MissingQuestionsPanel({ questions }: { questions: MissingQuestion[] }) {
+function AnswerAgentPanel({
+  questions,
+  messages,
+  status,
+}: {
+  questions: MissingQuestion[];
+  messages: string[];
+  status?: string;
+}) {
+  const initialQuestions =
+    questions.length > 0
+      ? questions
+      : [{ label: "", key: "new-question", suggestedAnswer: "", known: false }];
   const [answers, setAnswers] = useState<Record<string, string>>(() =>
     Object.fromEntries(
-      questions.map((question) => [
+      initialQuestions.map((question) => [
         question.key || normalizeQuestionKey(question.label),
         question.suggestedAnswer || "",
       ])
     )
   );
+  const [customQuestions, setCustomQuestions] = useState<MissingQuestion[]>(initialQuestions);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState("");
+
+  function setQuestionLabel(index: number, label: string) {
+    setCustomQuestions((current) =>
+      current.map((question, questionIndex) =>
+        questionIndex === index
+          ? {
+              ...question,
+              label,
+              key: normalizeQuestionKey(label) || `new-question-${questionIndex + 1}`,
+            }
+          : question
+      )
+    );
+  }
+
+  function addQuestion() {
+    const nextIndex = customQuestions.length + 1;
+    setCustomQuestions((current) => [
+      ...current,
+      {
+        label: "",
+        key: `new-question-${nextIndex}`,
+        suggestedAnswer: "",
+        known: false,
+      },
+    ]);
+  }
 
   async function saveAnswers() {
     setIsSaving(true);
@@ -531,8 +588,10 @@ function MissingQuestionsPanel({ questions }: { questions: MissingQuestion[] }) 
 
       const currentSettings = normalizeSettings(currentPayload.settings);
       const nextQuestionAnswers = { ...currentSettings.applicationQuestionAnswers };
-      Object.entries(answers).forEach(([key, answer]) => {
-        const normalizedKey = normalizeQuestionKey(key);
+      customQuestions.forEach((question) => {
+        const questionKey = question.label.trim() ? question.label : question.key;
+        const normalizedKey = normalizeQuestionKey(questionKey);
+        const answer = answers[question.key] ?? "";
         const trimmedAnswer = answer.trim();
         if (normalizedKey && trimmedAnswer) nextQuestionAnswers[normalizedKey] = trimmedAnswer;
       });
@@ -552,7 +611,7 @@ function MissingQuestionsPanel({ questions }: { questions: MissingQuestion[] }) 
         throw new Error(savePayload.error || "Could not save answers.");
       }
 
-      setMessage("Saved for future auto-apply runs.");
+      setMessage("Saved. The next auto-apply run will reuse these answers.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not save answers.");
     } finally {
@@ -562,16 +621,46 @@ function MissingQuestionsPanel({ questions }: { questions: MissingQuestion[] }) 
 
   return (
     <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
-      <div className="flex items-center gap-2 text-sm font-semibold text-amber-950">
-        <MessageSquareText className="h-4 w-4" />
-        Missing application details
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm font-semibold text-amber-950">
+          <MessageSquareText className="h-4 w-4" />
+          Application answer agent
+        </div>
+        {status && (
+          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-amber-900 ring-1 ring-amber-200">
+            {status}
+          </span>
+        )}
       </div>
+      <p className="mt-2 text-sm text-amber-900">
+        Add the portal question and answer once. Future auto-apply runs will fill matching questions automatically.
+      </p>
+      {messages.length > 0 && (
+        <div className="mt-3 rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs text-slate-600">
+          <p className="font-semibold text-slate-800">Last automation notes</p>
+          <ul className="mt-1 list-disc space-y-1 pl-4">
+            {messages.slice(-4).map((lastMessage, index) => (
+              <li key={`${lastMessage}-${index}`}>{lastMessage}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="mt-3 grid gap-3">
-        {questions.map((question) => {
+        {customQuestions.map((question, index) => {
           const key = question.key || normalizeQuestionKey(question.label);
           return (
-            <label key={key} className="grid gap-1 text-sm">
-              <span className="font-medium text-slate-800">{question.label}</span>
+            <div key={`${key}-${index}`} className="grid gap-2 rounded-lg border border-amber-200 bg-white p-3 text-sm md:grid-cols-[1.4fr_1fr]">
+              <label className="grid gap-1">
+                <span className="font-medium text-slate-800">Question</span>
+                <input
+                  value={question.label}
+                  onChange={(event) => setQuestionLabel(index, event.target.value)}
+                  placeholder="Example: How many years of experience do you have in Microservices?"
+                  className="h-10 rounded-lg border border-amber-200 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+              </label>
+              <label className="grid gap-1">
+                <span className="font-medium text-slate-800">Answer</span>
               <input
                 value={answers[key] ?? ""}
                 onChange={(event) =>
@@ -581,10 +670,18 @@ function MissingQuestionsPanel({ questions }: { questions: MissingQuestion[] }) 
                 className="h-10 rounded-lg border border-amber-200 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </label>
+            </div>
           );
         })}
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={addQuestion}
+          className="inline-flex h-10 items-center justify-center rounded-lg border border-amber-200 bg-white px-4 text-sm font-semibold text-amber-900 transition hover:bg-amber-100"
+        >
+          Add Question
+        </button>
         <button
           type="button"
           onClick={() => void saveAnswers()}
@@ -675,6 +772,14 @@ function getMissingQuestions(item: ApplicationQueueItem): MissingQuestion[] {
       };
     })
     .filter((question): question is MissingQuestion => Boolean(question));
+}
+
+function getLastMessages(item: ApplicationQueueItem) {
+  const value = item.notes?.last_messages;
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((message) => (typeof message === "string" ? message.trim() : ""))
+    .filter(Boolean);
 }
 
 function formatDateTime(value?: string) {
