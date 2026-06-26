@@ -54,6 +54,12 @@ type MissingQuestion = {
   known: boolean;
 };
 
+type LiveSessionPayload = {
+  status?: string;
+  questions?: MissingQuestion[];
+  messages?: string[];
+};
+
 export default function ApplicationQueueClient() {
   const [items, setItems] = useState<ApplicationQueueItem[]>([]);
   const [source, setSource] = useState<"table" | "storage" | undefined>();
@@ -558,8 +564,61 @@ function AnswerAgentPanel({
   );
   const [customQuestions, setCustomQuestions] = useState<MissingQuestion[]>(initialQuestions);
   const [isSaving, setIsSaving] = useState(false);
-  const [isContinuing, setIsContinuing] = useState(false);
+  const [isSendingLiveAnswer, setIsSendingLiveAnswer] = useState(false);
+  const [isLiveStarting, setIsLiveStarting] = useState(false);
+  const [liveSessionId, setLiveSessionId] = useState("");
+  const [liveSession, setLiveSession] = useState<LiveSessionPayload | null>(null);
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (!liveSessionId) return;
+
+    let stopped = false;
+    const interval = window.setInterval(async () => {
+      try {
+        const response = await fetch(
+          `/api/application-queue/live/status?sessionId=${encodeURIComponent(liveSessionId)}`,
+          { cache: "no-store" }
+        );
+        const payload = await response.json();
+        if (!response.ok || !payload.session || stopped) return;
+
+        const session = payload.session as LiveSessionPayload;
+        setLiveSession(session);
+        if (session.status === "waiting_for_answers" && Array.isArray(session.questions)) {
+          const nextQuestions = session.questions.map((question) => ({
+            label: String(question.label || ""),
+            key: String(question.key || normalizeQuestionKey(question.label || "")),
+            suggestedAnswer: String(question.suggestedAnswer || ""),
+            known: Boolean(question.known),
+          }));
+          if (nextQuestions.length > 0) {
+            setCustomQuestions(nextQuestions);
+          }
+          setAnswers((current) => ({
+            ...current,
+            ...Object.fromEntries(
+              nextQuestions.map((question) => [
+                question.key,
+                current[question.key] ?? question.suggestedAnswer ?? "",
+              ])
+            ),
+          }));
+          setMessage("Live agent is waiting for your answer.");
+        }
+        if (["submitted", "manual_review_required", "timeout", "captcha_required", "portal_auth_required"].includes(session.status || "")) {
+          setMessage(`Live agent status: ${session.status}`);
+        }
+      } catch {
+        // Keep polling; the process may still be starting.
+      }
+    }, 1500);
+
+    return () => {
+      stopped = true;
+      window.clearInterval(interval);
+    };
+  }, [liveSessionId]);
 
   function setQuestionLabel(index: number, label: string) {
     const oldKey = customQuestions[index]?.key;
@@ -643,21 +702,16 @@ function AnswerAgentPanel({
     }
   }
 
-  async function saveAndContinue() {
+  async function startLiveAgent() {
     if (!item.job_id) {
       setMessage("This application row is missing job_id.");
       return;
     }
 
-    setIsContinuing(true);
-    setMessage("");
-
+    setIsLiveStarting(true);
+    setMessage("Starting live application agent...");
     try {
-      const saved = await saveAnswers();
-      if (!saved) return;
-
-      setMessage("Saved. Continuing this application now...");
-      const response = await fetch("/api/application-queue/continue", {
+      const response = await fetch("/api/application-queue/live/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -667,15 +721,49 @@ function AnswerAgentPanel({
         }),
       });
       const payload = await response.json();
-      if (!response.ok || !payload.ok) {
-        const detail = payload.stderr || payload.stdout || payload.error;
-        throw new Error(detail || "Could not continue application.");
+      if (!response.ok || !payload.ok || !payload.sessionId) {
+        throw new Error(payload.error || "Could not start live agent.");
       }
-      setMessage("Application assistant finished. Refresh to see the latest status.");
+      setLiveSessionId(payload.sessionId);
+      setLiveSession({ status: "starting" });
+      setMessage("Live agent started. I will show the question here when the portal asks.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Could not continue application.");
+      setMessage(error instanceof Error ? error.message : "Could not start live agent.");
     } finally {
-      setIsContinuing(false);
+      setIsLiveStarting(false);
+    }
+  }
+
+  async function sendLiveAnswers() {
+    if (!liveSessionId) {
+      setMessage("Start live agent first.");
+      return;
+    }
+
+    setIsSendingLiveAnswer(true);
+    setMessage("Sending answer to the live agent...");
+    try {
+      const response = await fetch("/api/application-queue/live/answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: liveSessionId,
+          answers: customQuestions.map((question) => ({
+            key: question.key,
+            label: question.label,
+            answer: answers[question.key] ?? "",
+          })),
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "Could not send live answer.");
+      }
+      setMessage("Answer sent. Live agent is continuing this application now.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not send live answer.");
+    } finally {
+      setIsSendingLiveAnswer(false);
     }
   }
 
@@ -693,8 +781,13 @@ function AnswerAgentPanel({
         )}
       </div>
       <p className="mt-2 text-sm text-amber-900">
-        Add the portal question and answer once. Future auto-apply runs will fill matching questions automatically.
+        Start the live agent, answer the question when it appears, and the same application run will continue immediately.
       </p>
+      {liveSession && (
+        <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
+          Live status: <span className="font-semibold">{liveSession.status || "starting"}</span>
+        </div>
+      )}
       {messages.length > 0 && (
         <div className="mt-3 rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs text-slate-600">
           <p className="font-semibold text-slate-800">Last automation notes</p>
@@ -744,19 +837,27 @@ function AnswerAgentPanel({
         </button>
         <button
           type="button"
-          onClick={() => void saveAnswers()}
-          disabled={isSaving || isContinuing}
-          className="inline-flex h-10 items-center justify-center rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+          onClick={() => void startLiveAgent()}
+          disabled={isLiveStarting || Boolean(liveSessionId)}
+          className="inline-flex h-10 items-center justify-center rounded-lg bg-amber-600 px-4 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isSaving ? "Saving..." : "Save Answers"}
+          {isLiveStarting ? "Starting..." : liveSessionId ? "Live Agent Running" : "Start Live Apply"}
         </button>
         <button
           type="button"
-          onClick={() => void saveAndContinue()}
-          disabled={isSaving || isContinuing}
+          onClick={() => void sendLiveAnswers()}
+          disabled={!liveSessionId || isSendingLiveAnswer}
           className="inline-flex h-10 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isContinuing ? "Continuing..." : "Save & Continue Apply"}
+          {isSendingLiveAnswer ? "Sending..." : "Send Answer & Continue"}
+        </button>
+        <button
+          type="button"
+          onClick={() => void saveAnswers()}
+          disabled={isSaving || isSendingLiveAnswer}
+          className="inline-flex h-10 items-center justify-center rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isSaving ? "Saving..." : "Save Answers"}
         </button>
         {message && <span className="text-sm text-amber-900">{message}</span>}
       </div>
