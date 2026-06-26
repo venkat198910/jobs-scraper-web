@@ -523,6 +523,7 @@ function ApplicationRow({
       </div>
       {isAnswerAgentOpen && (
         <AnswerAgentPanel
+          item={item}
           questions={missingQuestions}
           messages={getLastMessages(item)}
           status={item.status}
@@ -533,10 +534,12 @@ function ApplicationRow({
 }
 
 function AnswerAgentPanel({
+  item,
   questions,
   messages,
   status,
 }: {
+  item: ApplicationQueueItem;
   questions: MissingQuestion[];
   messages: string[];
   status?: string;
@@ -555,20 +558,30 @@ function AnswerAgentPanel({
   );
   const [customQuestions, setCustomQuestions] = useState<MissingQuestion[]>(initialQuestions);
   const [isSaving, setIsSaving] = useState(false);
+  const [isContinuing, setIsContinuing] = useState(false);
   const [message, setMessage] = useState("");
 
   function setQuestionLabel(index: number, label: string) {
+    const oldKey = customQuestions[index]?.key;
+    const newKey = normalizeQuestionKey(label) || `new-question-${index + 1}`;
     setCustomQuestions((current) =>
       current.map((question, questionIndex) =>
         questionIndex === index
           ? {
               ...question,
               label,
-              key: normalizeQuestionKey(label) || `new-question-${questionIndex + 1}`,
+              key: newKey,
             }
           : question
       )
     );
+    if (oldKey && oldKey !== newKey) {
+      setAnswers((current) => {
+        const next = { ...current, [newKey]: current[oldKey] ?? "" };
+        delete next[oldKey];
+        return next;
+      });
+    }
   }
 
   function addQuestion() {
@@ -621,10 +634,48 @@ function AnswerAgentPanel({
       }
 
       setMessage("Saved. The next auto-apply run will reuse these answers.");
+      return true;
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not save answers.");
+      return false;
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function saveAndContinue() {
+    if (!item.job_id) {
+      setMessage("This application row is missing job_id.");
+      return;
+    }
+
+    setIsContinuing(true);
+    setMessage("");
+
+    try {
+      const saved = await saveAnswers();
+      if (!saved) return;
+
+      setMessage("Saved. Continuing this application now...");
+      const response = await fetch("/api/application-queue/continue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          job_id: item.job_id,
+          portal: item.portal,
+          application_type: item.application_type,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        const detail = payload.stderr || payload.stdout || payload.error;
+        throw new Error(detail || "Could not continue application.");
+      }
+      setMessage("Application assistant finished. Refresh to see the latest status.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not continue application.");
+    } finally {
+      setIsContinuing(false);
     }
   }
 
@@ -694,10 +745,18 @@ function AnswerAgentPanel({
         <button
           type="button"
           onClick={() => void saveAnswers()}
-          disabled={isSaving}
+          disabled={isSaving || isContinuing}
           className="inline-flex h-10 items-center justify-center rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSaving ? "Saving..." : "Save Answers"}
+        </button>
+        <button
+          type="button"
+          onClick={() => void saveAndContinue()}
+          disabled={isSaving || isContinuing}
+          className="inline-flex h-10 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isContinuing ? "Continuing..." : "Save & Continue Apply"}
         </button>
         {message && <span className="text-sm text-amber-900">{message}</span>}
       </div>
