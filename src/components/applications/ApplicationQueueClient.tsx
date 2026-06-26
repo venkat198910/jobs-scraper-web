@@ -399,6 +399,7 @@ function ApplicationRow({
     ["manual_review_required", "review_started", "portal_auth_required", "company_portal_review"].includes(
       item.status ?? ""
     );
+  const [isAnswerAgentOpen, setIsAnswerAgentOpen] = useState(showAnswerAgent);
 
   return (
     <article className="px-5 py-4">
@@ -488,6 +489,14 @@ function ApplicationRow({
               <ExternalLink className="h-4 w-4" />
             </a>
           )}
+          <button
+            type="button"
+            onClick={() => setIsAnswerAgentOpen((current) => !current)}
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 text-sm font-semibold text-amber-800 transition hover:bg-amber-100"
+          >
+            <MessageSquareText className="h-4 w-4" />
+            Answer Agent
+          </button>
           {item.status !== "submitted" && (
             <button
               type="button"
@@ -512,7 +521,7 @@ function ApplicationRow({
           </button>
         </div>
       </div>
-      {showAnswerAgent && (
+      {isAnswerAgentOpen && (
         <AnswerAgentPanel
           questions={missingQuestions}
           messages={getLastMessages(item)}
