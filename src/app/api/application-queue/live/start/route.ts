@@ -39,6 +39,24 @@ export async function POST(request: NextRequest) {
 
     const assistantDir = resolveAssistantDir();
     const pythonExecutable = resolvePythonExecutable(assistantDir);
+    const hasLlmKey = Boolean(
+      process.env.GEMINI_API_KEY ||
+        process.env.GEMINI_FIRST_API_KEY ||
+        process.env.OPENAI_API_KEY ||
+        process.env.ANTHROPIC_API_KEY ||
+        process.env.GROQ_API_KEY
+    );
+
+    if (!hasLlmKey) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "LLM Apply Agent needs at least one local LLM API key in WSL/Next env: GEMINI_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, or GROQ_API_KEY.",
+        },
+        { status: 400 }
+      );
+    }
 
     const env = {
       ...process.env,
