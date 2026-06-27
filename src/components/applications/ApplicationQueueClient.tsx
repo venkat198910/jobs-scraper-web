@@ -606,7 +606,7 @@ function AnswerAgentPanel({
           }));
           setMessage("Live agent is waiting for your answer.");
         }
-        if (["submitted", "completed", "manual_review_required", "timeout", "captcha_required", "portal_auth_required", "otp_or_mfa_required", "llm_error", "max_steps_reached"].includes(session.status || "")) {
+        if (["submitted", "completed", "manual_review_required", "timeout", "captcha_required", "portal_auth_required", "otp_or_mfa_required", "llm_error", "agent_error", "max_steps_reached"].includes(session.status || "")) {
           setMessage(`Live agent status: ${session.status}`);
         }
       } catch {
@@ -735,7 +735,7 @@ function AnswerAgentPanel({
     liveSession?.status === "waiting_for_answers"
       ? customQuestions.filter((question) => question.label.trim())
       : [];
-  const isLiveFinished = ["submitted", "completed", "manual_review_required", "timeout", "captcha_required", "portal_auth_required", "otp_or_mfa_required", "llm_error", "max_steps_reached"].includes(
+  const isLiveFinished = ["submitted", "completed", "manual_review_required", "timeout", "captcha_required", "portal_auth_required", "otp_or_mfa_required", "llm_error", "agent_error", "max_steps_reached"].includes(
     liveSession?.status || ""
   );
 

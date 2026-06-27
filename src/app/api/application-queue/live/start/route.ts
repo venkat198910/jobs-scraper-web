@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, openSync, writeFileSync } from "fs";
 import { spawn } from "child_process";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
@@ -23,22 +23,13 @@ export async function POST(request: NextRequest) {
 
     const sessionId = `${body.job_id}-${Date.now()}-${randomUUID().slice(0, 8)}`;
     mkdirSync(liveAgentDir(), { recursive: true });
-    writeFileSync(
-      liveSessionFile(sessionId),
-      JSON.stringify(
-        {
-          session_id: sessionId,
-          status: "starting",
-          job_id: body.job_id,
-          updated_at: new Date().toISOString(),
-        },
-        null,
-        2
-      )
-    );
 
     const assistantDir = resolveAssistantDir();
     const pythonExecutable = resolvePythonExecutable(assistantDir);
+    const defaultLinkedinState = `${assistantDir}/linkedin_storage_state.json`;
+    const linkedinStorageState =
+      process.env.LINKEDIN_STORAGE_STATE ||
+      (existsSync(defaultLinkedinState) ? defaultLinkedinState : "");
     const hasLlmKey = Boolean(
       process.env.GEMINI_API_KEY ||
         process.env.GEMINI_FIRST_API_KEY ||
@@ -67,10 +58,13 @@ export async function POST(request: NextRequest) {
         process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY,
       LINKEDIN_STORAGE_STATE_JSON:
         process.env.LINKEDIN_STORAGE_STATE_JSON ??
-        process.env.LINKEDIN_STORAGE_STATE ??
         "",
+      LINKEDIN_STORAGE_STATE: linkedinStorageState,
       JOBTRACK_LIVE_SESSION_ID: sessionId,
       JOBTRACK_LIVE_ANSWER_TIMEOUT_SECONDS: "1200",
+      DISPLAY: process.env.DISPLAY || ":0",
+      WAYLAND_DISPLAY: process.env.WAYLAND_DISPLAY || "wayland-0",
+      XDG_RUNTIME_DIR: process.env.XDG_RUNTIME_DIR || "/run/user/1000",
     };
 
     const args = [
@@ -85,11 +79,28 @@ export async function POST(request: NextRequest) {
       args.push("--headless");
     }
 
+    const logPath = `${liveAgentDir()}/${sessionId}.log`;
+    const logFd = openSync(logPath, "a");
+    writeFileSync(
+      liveSessionFile(sessionId),
+      JSON.stringify(
+        {
+          session_id: sessionId,
+          status: "starting",
+          job_id: body.job_id,
+          log_path: logPath,
+          updated_at: new Date().toISOString(),
+        },
+        null,
+        2
+      )
+    );
+
     const child = spawn(pythonExecutable, args, {
       cwd: assistantDir,
       env,
       detached: true,
-      stdio: "ignore",
+      stdio: ["ignore", logFd, logFd],
     });
     child.unref();
 
