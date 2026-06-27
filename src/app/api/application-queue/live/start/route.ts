@@ -79,9 +79,11 @@ export async function POST(request: NextRequest) {
       body.job_id,
       "--max-steps",
       "25",
-      "--headless",
       "--allow-submit",
     ];
+    if (process.env.JOBTRACK_LIVE_HEADLESS === "1") {
+      args.push("--headless");
+    }
 
     const child = spawn(pythonExecutable, args, {
       cwd: assistantDir,
