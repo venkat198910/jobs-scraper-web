@@ -229,6 +229,10 @@ function normalizeItem(
   source: "table" | "storage"
 ): ApplicationQueueItem {
   const notes = asRecord(item.notes) ?? {};
+  const noteApplyUrl =
+    asString(notes.resolved_apply_url) ??
+    asString(notes.backfilled_apply_url) ??
+    asString(notes.apply_url);
 
   return {
     id: asString(item.id),
@@ -238,7 +242,7 @@ function normalizeItem(
     portal: asString(item.portal),
     status: asString(item.status),
     run_mode: asString(item.run_mode),
-    apply_url: asString(item.apply_url),
+    apply_url: asString(item.apply_url) ?? noteApplyUrl,
     resume_path: asString(item.resume_path),
     score: asNumber(item.score),
     notes,
