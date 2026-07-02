@@ -55,6 +55,21 @@ interface AppliedJobsListProps {
   totalPages: number;
 }
 
+function getJobListingUrl(job: Job) {
+  if (job.apply_url || job.job_url) {
+    return job.apply_url || job.job_url || "#";
+  }
+  if (job.provider === "careers_future") {
+    return `https://www.mycareersfuture.gov.sg/job/${job.job_id}`;
+  }
+  if ((job.provider || "").startsWith("company_careers")) {
+    return `https://www.google.com/search?q=${encodeURIComponent(
+      `${job.company} ${job.job_title} careers`
+    )}`;
+  }
+  return `https://www.linkedin.com/jobs/view/${job.job_id}`;
+}
+
 export default function AppliedJobsList({
   jobs,
   currentPage,
@@ -216,11 +231,7 @@ export default function AppliedJobsList({
                       View Details
                     </Link>
                     <Link
-                      href={
-                        job.provider === "careers_future"
-                          ? `https://www.mycareersfuture.gov.sg/job/${job.job_id}`
-                          : `https://www.linkedin.com/jobs/view/${job.job_id}`
-                      }
+                      href={getJobListingUrl(job)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 transition-colors"

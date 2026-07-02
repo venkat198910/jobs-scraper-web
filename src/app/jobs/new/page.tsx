@@ -85,6 +85,8 @@ export default async function NewJobsPage({
         ? "Jobs Without Custom Resumes"
         : providerFilter === "linkedin"
           ? "LinkedIn Jobs"
+          : providerFilter === "company_careers"
+            ? "Company Career Jobs"
           : providerFilter === "careers_future"
             ? "CareersFuture Jobs"
             : "New Jobs";

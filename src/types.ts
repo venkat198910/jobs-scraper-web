@@ -23,6 +23,8 @@ export interface Job {
   customized_resumes?: Resume | null;
   resume_link?: string | null;
   provider: string;
+  apply_url?: string | null;
+  job_url?: string | null;
 }
 
 // --- Resume Related Interfaces ---

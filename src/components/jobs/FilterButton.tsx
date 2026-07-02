@@ -12,6 +12,7 @@ interface FilterOption {
 const PROVIDER_OPTIONS: FilterOption[] = [
   { value: "all", label: "All Providers" },
   { value: "linkedin", label: "LinkedIn" },
+  { value: "company_careers", label: "Company Careers" },
   { value: "careers_future", label: "Careers Future" },
 ];
 

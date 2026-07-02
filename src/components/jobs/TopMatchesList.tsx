@@ -26,6 +26,31 @@ interface TopMatchesListProps {
   totalPages: number;
 }
 
+function getProviderLabel(provider?: string | null) {
+  if (provider === "careers_future") {
+    return "MyCareersFuture";
+  }
+  if ((provider || "").startsWith("company_careers")) {
+    return "Company Careers";
+  }
+  return "LinkedIn";
+}
+
+function getJobListingUrl(job: Job) {
+  if (job.apply_url || job.job_url) {
+    return job.apply_url || job.job_url || "#";
+  }
+  if (job.provider === "careers_future") {
+    return `https://www.mycareersfuture.gov.sg/job/${job.job_id}`;
+  }
+  if ((job.provider || "").startsWith("company_careers")) {
+    return `https://www.google.com/search?q=${encodeURIComponent(
+      `${job.company} ${job.job_title} careers`
+    )}`;
+  }
+  return `https://www.linkedin.com/jobs/view/${job.job_id}`;
+}
+
 export default function TopMatchesList({
   jobs,
   currentPage,
@@ -288,9 +313,7 @@ export default function TopMatchesList({
                       <div className="mt-1 flex items-center text-xs text-gray-400">
                         <SocialLink className="h-3 w-3 mr-1 flex-shrink-0" />
                         <span className="capitalize truncate">
-                          {job.provider === "careers_future"
-                            ? "MyCareersFuture"
-                            : "LinkedIn"}
+                          {getProviderLabel(job.provider)}
                         </span>
                       </div>
                     </div>
@@ -373,9 +396,7 @@ export default function TopMatchesList({
                     <div className="flex items-center">
                       <SocialLink className="h-4 w-4 mr-1.5 text-gray-500" />
                       <span className="capitalize truncate">
-                        {selectedJob.provider === "careers_future"
-                          ? "MyCareersFuture"
-                          : "LinkedIn"}
+                        {getProviderLabel(selectedJob.provider)}
                       </span>
                     </div>
                   </div>
@@ -407,14 +428,7 @@ export default function TopMatchesList({
               {/* Action buttons */}
               <div className="flex flex-wrap gap-3 mt-5">
                 {(() => {
-                  // Determine the job listing URL based on the provider
-                  let jobUrl;
-                  if (selectedJob.provider === "careers_future") {
-                    jobUrl = `https://www.mycareersfuture.gov.sg/job/${selectedJob.job_id}`;
-                  } else {
-                    // Default to LinkedIn for "linkedin" provider or any other/undefined provider
-                    jobUrl = `https://www.linkedin.com/jobs/view/${selectedJob.job_id}`;
-                  }
+                  const jobUrl = getJobListingUrl(selectedJob);
 
                   return (
                     <Link

@@ -24,6 +24,31 @@ interface JobDetailsClientProps {
   initialJob: Job;
 }
 
+function getProviderLabel(provider?: string | null) {
+  if (provider === "careers_future") {
+    return "MyCareersFuture";
+  }
+  if ((provider || "").startsWith("company_careers")) {
+    return "Company Careers";
+  }
+  return "LinkedIn";
+}
+
+function getJobListingUrl(job: Job) {
+  if (job.apply_url || job.job_url) {
+    return job.apply_url || job.job_url || "#";
+  }
+  if (job.provider === "careers_future") {
+    return `https://www.mycareersfuture.gov.sg/job/${job.job_id}`;
+  }
+  if ((job.provider || "").startsWith("company_careers")) {
+    return `https://www.google.com/search?q=${encodeURIComponent(
+      `${job.company} ${job.job_title} careers`
+    )}`;
+  }
+  return `https://www.linkedin.com/jobs/view/${job.job_id}`;
+}
+
 export default function JobDetailsClient({
   initialJob,
 }: JobDetailsClientProps) {
@@ -154,13 +179,7 @@ export default function JobDetailsClient({
     }
   };
 
-  // Determine the job listing URL based on the provider
-  let jobUrl;
-  if (job.provider === "careers_future") {
-    jobUrl = `https://www.mycareersfuture.gov.sg/job/${job.job_id}`;
-  } else {
-    jobUrl = `https://www.linkedin.com/jobs/view/${job.job_id}`;
-  }
+  const jobUrl = getJobListingUrl(job);
 
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden">
@@ -187,9 +206,7 @@ export default function JobDetailsClient({
               <div className="flex items-center">
                 <SocialLink className="h-5 w-5 mr-2 text-gray-500" />
                 <span className="capitalize">
-                  {job.provider === "careers_future"
-                    ? "MyCareersFuture"
-                    : "LinkedIn"}
+                  {getProviderLabel(job.provider)}
                 </span>
               </div>
             </div>

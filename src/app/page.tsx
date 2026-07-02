@@ -12,6 +12,7 @@ import {
   getScoredWithCustomResumeCount,
   getLinkedInJobsCount,
   getCareersFutureJobsCount,
+  getCompanyCareerJobsCount,
   getAppliedJobsCountByDate, // Added import
 } from "@/lib/supabase/queries";
 import {
@@ -27,6 +28,7 @@ import {
   FileUp,
   FileSignature,
   Linkedin,
+  Building2,
   SquareKanban,
   CalendarCheck, // Added import for a new icon
 } from "lucide-react";
@@ -88,6 +90,7 @@ export default async function Home() {
   const scoredWithCustomResumeCount = await getScoredWithCustomResumeCount();
   const linkedInJobsCount = await getLinkedInJobsCount();
   const careersFutureJobsCount = await getCareersFutureJobsCount();
+  const companyCareerJobsCount = await getCompanyCareerJobsCount();
 
   // Get server's current local date in YYYY-MM-DD format
   const now = new Date(); // Current date/time in server's local timezone
@@ -208,6 +211,14 @@ export default async function Home() {
       href: "/jobs/new?provider=linkedin",
       description: "Active LinkedIn jobs.",
       color: "bg-cyan-500",
+    },
+    {
+      title: "Company Career Jobs",
+      value: companyCareerJobsCount,
+      icon: <Building2 size={20} />,
+      href: "/jobs/new?provider=company_careers",
+      description: "Active jobs from company career pages.",
+      color: "bg-orange-500",
     },
     {
       title: "CareersFuture Jobs",

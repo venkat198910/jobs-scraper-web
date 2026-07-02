@@ -20,6 +20,16 @@ async function handleResponse({
   return data;
 }
 
+function applyProviderFilter(query: any, provider?: string) {
+  if (!provider) {
+    return query;
+  }
+  if (provider === "company_careers") {
+    return query.like("provider", "company_careers%");
+  }
+  return query.eq("provider", provider);
+}
+
 // --- Query Functions ---
 
 export async function getTopScoredJobs(
@@ -46,9 +56,7 @@ export async function getTopScoredJobs(
     .gte("resume_score", minScore)
     .lte("resume_score", maxScore);
 
-  if (provider) {
-    query = query.eq("provider", provider);
-  }
+  query = applyProviderFilter(query, provider);
 
   if (scoreStage === "initial") {
     query = query.eq("resume_score_stage", scoreStage);
@@ -105,9 +113,7 @@ export async function getTopScoredJobsCount(
     .lte("resume_score", maxScore); // Apply maxScore filter
 
   // Add provider filter if specified
-  if (provider) {
-    query = query.eq("provider", provider);
-  }
+  query = applyProviderFilter(query, provider);
 
   if (scoreStage === "initial") {
     query = query.eq("resume_score_stage", scoreStage);
@@ -192,9 +198,7 @@ export async function getNewJobs(
   }
 
   // Add provider filter if specified
-  if (provider) {
-    query = query.eq("provider", provider);
-  }
+  query = applyProviderFilter(query, provider);
 
   // Add interest filter if specified
   if (isInterested === true) {
@@ -261,9 +265,7 @@ export async function getAllActiveJobsCount(
   }
 
   // Add provider filter if specified
-  if (provider) {
-    query = query.eq("provider", provider);
-  }
+  query = applyProviderFilter(query, provider);
 
   // Add interest filter if specified
   if (isInterested === true) {
@@ -347,9 +349,7 @@ export async function getAppliedJobsCount(
   }
 
   // Add provider filter if specified
-  if (provider) {
-    query = query.eq("provider", provider);
-  }
+  query = applyProviderFilter(query, provider);
 
   // Add search query filter if specified
   if (searchQuery) {
@@ -658,9 +658,7 @@ export async function getExpiredJobsCount(
     .select("*", { count: "exact", head: true })
     .eq("job_state", "expired");
 
-  if (provider) {
-    query = query.eq("provider", provider);
-  }
+  query = applyProviderFilter(query, provider);
 
   if (isInterested === true) {
     query = query.is("is_interested", true);
@@ -716,9 +714,7 @@ export async function getExpiredJobs(
     .select("*, customized_resumes!inner(*)")
     .eq("job_state", "expired");
 
-  if (provider) {
-    query = query.eq("provider", provider);
-  }
+  query = applyProviderFilter(query, provider);
 
   if (isInterested === true) {
     query = query.is("is_interested", true);
@@ -815,9 +811,7 @@ export async function getCustomResumeJobsCount(
     .not("customized_resume_id", "is", null)
     .eq("is_active", true);
 
-  if (provider) {
-    query = query.eq("provider", provider);
-  }
+  query = applyProviderFilter(query, provider);
 
   if (isInterested === true) {
     query = query.is("is_interested", true);
@@ -874,9 +868,7 @@ export async function getCustomResumeJobs(
     .not("customized_resume_id", "is", null)
     .eq("is_active", true);
 
-  if (provider) {
-    query = query.eq("provider", provider);
-  }
+  query = applyProviderFilter(query, provider);
 
   if (isInterested === true) {
     query = query.is("is_interested", true);
@@ -1023,6 +1015,29 @@ export async function getCareersFutureJobsCount(): Promise<number> {
 
   if (error) {
     console.error("Supabase count error (Careers Future jobs):", error);
+    throw new Error(error.message);
+  }
+  return count ?? 0;
+}
+
+/**
+ * Gets the count of jobs from configured company career pages.
+ * Company career providers are stored as company_careers_workday,
+ * company_careers_greenhouse, company_careers_jibe, etc.
+ */
+export async function getCompanyCareerJobsCount(): Promise<number> {
+  const supabase = await createSupabaseServerClient();
+  const { count, error } = await supabase
+    .from("jobs")
+    .select("*", { count: "exact", head: true })
+    .like("provider", "company_careers%")
+    .eq("is_active", true)
+    .eq("status", "new")
+    .eq("job_state", "new")
+    .or("is_interested.is.null,is_interested.eq.true");
+
+  if (error) {
+    console.error("Supabase count error (Company Career jobs):", error);
     throw new Error(error.message);
   }
   return count ?? 0;

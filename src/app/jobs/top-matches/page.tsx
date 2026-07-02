@@ -86,7 +86,11 @@ export default async function TopMatchesPage({
 
     if (providerFilter) {
       const providerName =
-        providerFilter === "linkedin" ? "LinkedIn" : "Careers Future";
+        providerFilter === "linkedin"
+          ? "LinkedIn"
+          : providerFilter === "company_careers"
+            ? "Company Career"
+            : "Careers Future";
       filtersApplied.push(`${providerName} jobs`);
     }
 
