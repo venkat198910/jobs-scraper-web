@@ -486,7 +486,7 @@ export default function SettingsClient() {
           <NumberField label="LLM Delay" value={settings.advanced.llmRequestDelaySeconds} min={0} onChange={(value) => setAdvanced("llmRequestDelaySeconds", value)} />
           <NumberField label="Jobs To Score" value={settings.advanced.jobsToScorePerRun} min={1} onChange={(value) => setAdvanced("jobsToScorePerRun", value)} />
           <NumberField label="Jobs To Customize" value={settings.advanced.jobsToCustomizePerRun} min={1} onChange={(value) => setAdvanced("jobsToCustomizePerRun", value)} />
-          <NumberField label="Jobs To Rescore" value={settings.advanced.jobsToRescorePerRun} min={1} onChange={(value) => setAdvanced("jobsToRescorePerRun", value)} />
+          <NumberField label="Jobs To Rescore" value={settings.advanced.jobsToRescorePerRun} min={0} onChange={(value) => setAdvanced("jobsToRescorePerRun", value)} />
           <NumberField label="LinkedIn Jobs/Search" value={settings.advanced.maxLinkedinJobsPerSearch} min={1} onChange={(value) => setAdvanced("maxLinkedinJobsPerSearch", value)} />
           <NumberField label="CareersFuture Jobs/Search" value={settings.advanced.maxCareersFutureJobsPerSearch} min={1} onChange={(value) => setAdvanced("maxCareersFutureJobsPerSearch", value)} />
           <NumberField label="LinkedIn Pages" value={settings.advanced.linkedinMaxStart} min={0} onChange={(value) => setAdvanced("linkedinMaxStart", value)} />
