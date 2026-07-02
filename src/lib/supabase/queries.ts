@@ -809,7 +809,9 @@ export async function getCustomResumeJobsCount(
     .from("jobs")
     .select("*", { count: "exact", head: true })
     .not("customized_resume_id", "is", null)
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .eq("status", "new")
+    .eq("job_state", "new");
 
   query = applyProviderFilter(query, provider);
 
@@ -866,7 +868,9 @@ export async function getCustomResumeJobs(
     .from("jobs")
     .select("*, customized_resumes!inner(*)")
     .not("customized_resume_id", "is", null)
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .eq("status", "new")
+    .eq("job_state", "new");
 
   query = applyProviderFilter(query, provider);
 
