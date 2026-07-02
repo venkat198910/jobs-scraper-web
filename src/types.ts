@@ -25,6 +25,7 @@ export interface Job {
   provider: string;
   apply_url?: string | null;
   job_url?: string | null;
+  career_url?: string | null;
 }
 
 // --- Resume Related Interfaces ---

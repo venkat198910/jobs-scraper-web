@@ -19,6 +19,7 @@ import MarkdownRenderer from "./MarkdownRenderer";
 import { Job } from "@/types";
 import { useRouter, useSearchParams } from "next/navigation"; // Added useSearchParams
 import PostedDate from "./PostedDate";
+import { getJobListingUrl } from "@/lib/jobUrls";
 
 interface TopMatchesListProps {
   jobs: Job[];
@@ -34,21 +35,6 @@ function getProviderLabel(provider?: string | null) {
     return "Company Careers";
   }
   return "LinkedIn";
-}
-
-function getJobListingUrl(job: Job) {
-  if (job.apply_url || job.job_url) {
-    return job.apply_url || job.job_url || "#";
-  }
-  if (job.provider === "careers_future") {
-    return `https://www.mycareersfuture.gov.sg/job/${job.job_id}`;
-  }
-  if ((job.provider || "").startsWith("company_careers")) {
-    return `https://www.google.com/search?q=${encodeURIComponent(
-      `${job.company} ${job.job_title} careers`
-    )}`;
-  }
-  return `https://www.linkedin.com/jobs/view/${job.job_id}`;
 }
 
 export default function TopMatchesList({

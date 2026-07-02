@@ -19,6 +19,7 @@ import {
 import MarkdownRenderer from "./MarkdownRenderer"; // Assuming this is in the same directory or adjust path
 import { Job } from "@/types"; // Assuming types are defined here
 import PostedDate from "./PostedDate";
+import { getJobListingUrl } from "@/lib/jobUrls";
 
 interface JobDetailsClientProps {
   initialJob: Job;
@@ -32,21 +33,6 @@ function getProviderLabel(provider?: string | null) {
     return "Company Careers";
   }
   return "LinkedIn";
-}
-
-function getJobListingUrl(job: Job) {
-  if (job.apply_url || job.job_url) {
-    return job.apply_url || job.job_url || "#";
-  }
-  if (job.provider === "careers_future") {
-    return `https://www.mycareersfuture.gov.sg/job/${job.job_id}`;
-  }
-  if ((job.provider || "").startsWith("company_careers")) {
-    return `https://www.google.com/search?q=${encodeURIComponent(
-      `${job.company} ${job.job_title} careers`
-    )}`;
-  }
-  return `https://www.linkedin.com/jobs/view/${job.job_id}`;
 }
 
 export default function JobDetailsClient({
