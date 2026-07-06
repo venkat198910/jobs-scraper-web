@@ -93,6 +93,7 @@ export type SettingsState = {
     jobsToRescorePerRun: number;
     maxLinkedinJobsPerSearch: number;
     maxCareersFutureJobsPerSearch: number;
+    maxCompanyCareerJobsPerRun: number;
     linkedinMaxStart: number;
     requestTimeout: number;
     maxRetries: number;
@@ -278,6 +279,7 @@ export const defaultSettings: SettingsState = {
     jobsToRescorePerRun: 0,
     maxLinkedinJobsPerSearch: 20,
     maxCareersFutureJobsPerSearch: 10,
+    maxCompanyCareerJobsPerRun: 50,
     linkedinMaxStart: 1,
     requestTimeout: 30,
     maxRetries: 3,
@@ -493,6 +495,7 @@ export function normalizeSettings(value: unknown): SettingsState {
       jobsToRescorePerRun: boundedNumber(advanced.jobsToRescorePerRun, defaultSettings.advanced.jobsToRescorePerRun, 0, 1000),
       maxLinkedinJobsPerSearch: boundedNumber(advanced.maxLinkedinJobsPerSearch, defaultSettings.advanced.maxLinkedinJobsPerSearch, 1, 1000),
       maxCareersFutureJobsPerSearch: boundedNumber(advanced.maxCareersFutureJobsPerSearch, defaultSettings.advanced.maxCareersFutureJobsPerSearch, 1, 1000),
+      maxCompanyCareerJobsPerRun: boundedNumber(advanced.maxCompanyCareerJobsPerRun, defaultSettings.advanced.maxCompanyCareerJobsPerRun, 1, 1000),
       linkedinMaxStart: boundedNumber(advanced.linkedinMaxStart, defaultSettings.advanced.linkedinMaxStart, 0, 1000),
       requestTimeout: boundedNumber(advanced.requestTimeout, defaultSettings.advanced.requestTimeout, 5, 300),
       maxRetries: boundedNumber(advanced.maxRetries, defaultSettings.advanced.maxRetries, 0, 10),

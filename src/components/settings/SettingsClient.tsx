@@ -489,6 +489,7 @@ export default function SettingsClient() {
           <NumberField label="Jobs To Rescore" value={settings.advanced.jobsToRescorePerRun} min={0} onChange={(value) => setAdvanced("jobsToRescorePerRun", value)} />
           <NumberField label="LinkedIn Jobs/Search" value={settings.advanced.maxLinkedinJobsPerSearch} min={1} onChange={(value) => setAdvanced("maxLinkedinJobsPerSearch", value)} />
           <NumberField label="CareersFuture Jobs/Search" value={settings.advanced.maxCareersFutureJobsPerSearch} min={1} onChange={(value) => setAdvanced("maxCareersFutureJobsPerSearch", value)} />
+          <NumberField label="Company Careers/Run" value={settings.advanced.maxCompanyCareerJobsPerRun} min={1} onChange={(value) => setAdvanced("maxCompanyCareerJobsPerRun", value)} />
           <NumberField label="LinkedIn Pages" value={settings.advanced.linkedinMaxStart} min={0} onChange={(value) => setAdvanced("linkedinMaxStart", value)} />
           <NumberField label="Request Timeout" value={settings.advanced.requestTimeout} min={5} onChange={(value) => setAdvanced("requestTimeout", value)} />
           <NumberField label="HTTP Retries" value={settings.advanced.maxRetries} min={0} onChange={(value) => setAdvanced("maxRetries", value)} />
