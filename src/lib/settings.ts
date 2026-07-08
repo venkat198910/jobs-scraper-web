@@ -101,6 +101,7 @@ export type SettingsState = {
     jobExpiryDays: number;
     jobCheckDays: number;
     jobDeletionDays: number;
+    appliedJobRetentionDays: number;
     jobCheckLimit: number;
     activeCheckTimeout: number;
     activeCheckMaxRetries: number;
@@ -287,6 +288,7 @@ export const defaultSettings: SettingsState = {
     jobExpiryDays: 7,
     jobCheckDays: 3,
     jobDeletionDays: 60,
+    appliedJobRetentionDays: 30,
     jobCheckLimit: 50,
     activeCheckTimeout: 20,
     activeCheckMaxRetries: 2,
@@ -503,6 +505,7 @@ export function normalizeSettings(value: unknown): SettingsState {
       jobExpiryDays: boundedNumber(advanced.jobExpiryDays, defaultSettings.advanced.jobExpiryDays, 1, 365),
       jobCheckDays: boundedNumber(advanced.jobCheckDays, defaultSettings.advanced.jobCheckDays, 1, 365),
       jobDeletionDays: boundedNumber(advanced.jobDeletionDays, defaultSettings.advanced.jobDeletionDays, 1, 3650),
+      appliedJobRetentionDays: boundedNumber(advanced.appliedJobRetentionDays, defaultSettings.advanced.appliedJobRetentionDays, 1, 3650),
       jobCheckLimit: boundedNumber(advanced.jobCheckLimit, defaultSettings.advanced.jobCheckLimit, 1, 1000),
       activeCheckTimeout: boundedNumber(advanced.activeCheckTimeout, defaultSettings.advanced.activeCheckTimeout, 5, 300),
       activeCheckMaxRetries: boundedNumber(advanced.activeCheckMaxRetries, defaultSettings.advanced.activeCheckMaxRetries, 0, 10),

@@ -128,6 +128,8 @@ export default function TopMatchesList({
         body: JSON.stringify({
           status: "applied",
           application_date: currentDate,
+          job_state: "new",
+          is_active: true,
         }),
       });
 

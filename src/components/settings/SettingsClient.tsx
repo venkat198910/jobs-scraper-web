@@ -497,6 +497,7 @@ export default function SettingsClient() {
           <NumberField label="Expire Days" value={settings.advanced.jobExpiryDays} min={1} onChange={(value) => setAdvanced("jobExpiryDays", value)} />
           <NumberField label="Check Days" value={settings.advanced.jobCheckDays} min={1} onChange={(value) => setAdvanced("jobCheckDays", value)} />
           <NumberField label="Delete Days" value={settings.advanced.jobDeletionDays} min={1} onChange={(value) => setAdvanced("jobDeletionDays", value)} />
+          <NumberField label="Applied Retention Days" value={settings.advanced.appliedJobRetentionDays} min={1} onChange={(value) => setAdvanced("appliedJobRetentionDays", value)} />
           <NumberField label="Check Limit" value={settings.advanced.jobCheckLimit} min={1} onChange={(value) => setAdvanced("jobCheckLimit", value)} />
           <NumberField label="Active Timeout" value={settings.advanced.activeCheckTimeout} min={5} onChange={(value) => setAdvanced("activeCheckTimeout", value)} />
           <NumberField label="Active Retries" value={settings.advanced.activeCheckMaxRetries} min={0} onChange={(value) => setAdvanced("activeCheckMaxRetries", value)} />
