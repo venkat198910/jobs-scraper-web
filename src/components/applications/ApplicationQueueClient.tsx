@@ -60,6 +60,18 @@ type LiveSessionPayload = {
   messages?: string[];
 };
 
+const SUBMITTED_STATUS = "submitted";
+const READY_FILTER = "__ready_queue__";
+const REVIEW_FILTER = "__review_statuses__";
+const REVIEW_STATUSES = new Set([
+  "review_started",
+  "manual_review_required",
+  "portal_auth_required",
+  "company_portal_review",
+  "external_apply_unresolved",
+  "captcha_required",
+]);
+
 export default function ApplicationQueueClient() {
   const [items, setItems] = useState<ApplicationQueueItem[]>([]);
   const [source, setSource] = useState<"table" | "storage" | undefined>();
@@ -104,33 +116,46 @@ export default function ApplicationQueueClient() {
   }, [loadQueue]);
 
   const summary = useMemo(() => {
-    const ready = items.filter((item) => item.status === "application_ready").length;
-    const inReview = items.filter((item) => item.status === "review_started").length;
+    const ready = items.filter((item) => item.status !== SUBMITTED_STATUS).length;
+    const inReview = items.filter((item) =>
+      REVIEW_STATUSES.has(item.status ?? "")
+    ).length;
     const planned = items.filter((item) => item.status === "planned").length;
-    const submitted = items.filter((item) => item.status === "submitted").length;
+    const submitted = items.filter((item) => item.status === SUBMITTED_STATUS).length;
 
     return { ready, inReview, planned, submitted };
   }, [items]);
 
   const filteredItems = useMemo(() => {
     if (!activeFilter.key || !activeFilter.value) {
-      return items.filter((item) => item.status !== "submitted");
+      return items.filter((item) => item.status !== SUBMITTED_STATUS);
+    }
+
+    if (activeFilter.key === "status" && activeFilter.value === READY_FILTER) {
+      return items.filter((item) => item.status !== SUBMITTED_STATUS);
+    }
+
+    if (activeFilter.key === "status" && activeFilter.value === REVIEW_FILTER) {
+      return items.filter((item) => REVIEW_STATUSES.has(item.status ?? ""));
     }
 
     return items.filter((item) => item[activeFilter.key!] === activeFilter.value);
   }, [activeFilter, items]);
 
   const defaultQueueItems = useMemo(
-    () => items.filter((item) => item.status !== "submitted"),
+    () => items.filter((item) => item.status !== SUBMITTED_STATUS),
     [items]
   );
 
+  const resultTotal =
+    !activeFilter.key || activeFilter.value === READY_FILTER
+      ? defaultQueueItems.length
+      : items.length;
+
   const resultLabel = isLoading
     ? "Loading..."
-    : `${filteredItems.length} of ${
-        activeFilter.key ? items.length : defaultQueueItems.length
-      } result${
-        (activeFilter.key ? items.length : defaultQueueItems.length) === 1 ? "" : "s"
+    : `${filteredItems.length} of ${resultTotal} result${
+        resultTotal === 1 ? "" : "s"
       } shown`;
 
   const applyFilter = (
@@ -277,14 +302,17 @@ export default function ApplicationQueueClient() {
           <Metric
             label="Ready"
             value={summary.ready}
-            active={activeFilter.key === "status" && activeFilter.value === "application_ready"}
-            onClick={() => applyFilter("status", "application_ready")}
+            active={
+              !activeFilter.key ||
+              (activeFilter.key === "status" && activeFilter.value === READY_FILTER)
+            }
+            onClick={() => applyFilter("status", READY_FILTER)}
           />
           <Metric
             label="In Review"
             value={summary.inReview}
-            active={activeFilter.key === "status" && activeFilter.value === "review_started"}
-            onClick={() => applyFilter("status", "review_started")}
+            active={activeFilter.key === "status" && activeFilter.value === REVIEW_FILTER}
+            onClick={() => applyFilter("status", REVIEW_FILTER)}
           />
           <Metric
             label="Planned"
@@ -295,8 +323,8 @@ export default function ApplicationQueueClient() {
           <Metric
             label="Submitted"
             value={summary.submitted}
-            active={activeFilter.key === "status" && activeFilter.value === "submitted"}
-            onClick={() => applyFilter("status", "submitted")}
+            active={activeFilter.key === "status" && activeFilter.value === SUBMITTED_STATUS}
+            onClick={() => applyFilter("status", SUBMITTED_STATUS)}
           />
         </section>
 
