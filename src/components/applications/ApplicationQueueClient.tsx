@@ -113,15 +113,24 @@ export default function ApplicationQueueClient() {
   }, [items]);
 
   const filteredItems = useMemo(() => {
-    if (!activeFilter.key || !activeFilter.value) return items;
+    if (!activeFilter.key || !activeFilter.value) {
+      return items.filter((item) => item.status !== "submitted");
+    }
 
     return items.filter((item) => item[activeFilter.key!] === activeFilter.value);
   }, [activeFilter, items]);
 
+  const defaultQueueItems = useMemo(
+    () => items.filter((item) => item.status !== "submitted"),
+    [items]
+  );
+
   const resultLabel = isLoading
     ? "Loading..."
-    : `${filteredItems.length} of ${items.length} result${
-        items.length === 1 ? "" : "s"
+    : `${filteredItems.length} of ${
+        activeFilter.key ? items.length : defaultQueueItems.length
+      } result${
+        (activeFilter.key ? items.length : defaultQueueItems.length) === 1 ? "" : "s"
       } shown`;
 
   const applyFilter = (
