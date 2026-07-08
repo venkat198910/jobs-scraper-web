@@ -61,6 +61,7 @@ type LiveSessionPayload = {
 };
 
 const SUBMITTED_STATUS = "submitted";
+const DELETED_STATUS = "deleted";
 const READY_FILTER = "__ready_queue__";
 const REVIEW_FILTER = "__review_statuses__";
 const REVIEW_STATUSES = new Set([
@@ -116,7 +117,9 @@ export default function ApplicationQueueClient() {
   }, [loadQueue]);
 
   const summary = useMemo(() => {
-    const ready = items.filter((item) => item.status !== SUBMITTED_STATUS).length;
+    const ready = items.filter(
+      (item) => item.status !== SUBMITTED_STATUS && item.status !== DELETED_STATUS
+    ).length;
     const inReview = items.filter((item) =>
       REVIEW_STATUSES.has(item.status ?? "")
     ).length;
@@ -128,11 +131,15 @@ export default function ApplicationQueueClient() {
 
   const filteredItems = useMemo(() => {
     if (!activeFilter.key || !activeFilter.value) {
-      return items.filter((item) => item.status !== SUBMITTED_STATUS);
+      return items.filter(
+        (item) => item.status !== SUBMITTED_STATUS && item.status !== DELETED_STATUS
+      );
     }
 
     if (activeFilter.key === "status" && activeFilter.value === READY_FILTER) {
-      return items.filter((item) => item.status !== SUBMITTED_STATUS);
+      return items.filter(
+        (item) => item.status !== SUBMITTED_STATUS && item.status !== DELETED_STATUS
+      );
     }
 
     if (activeFilter.key === "status" && activeFilter.value === REVIEW_FILTER) {
@@ -143,7 +150,10 @@ export default function ApplicationQueueClient() {
   }, [activeFilter, items]);
 
   const defaultQueueItems = useMemo(
-    () => items.filter((item) => item.status !== SUBMITTED_STATUS),
+    () =>
+      items.filter(
+        (item) => item.status !== SUBMITTED_STATUS && item.status !== DELETED_STATUS
+      ),
     [items]
   );
 

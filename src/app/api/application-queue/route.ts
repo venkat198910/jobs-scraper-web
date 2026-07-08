@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/utils/supabase/server";
 const QUEUE_TABLE = "application_queue";
 const QUEUE_BUCKET = "resumes";
 const QUEUE_PREFIX = "application_queue";
+const DELETED_STATUS = "deleted";
 
 type SupabaseClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
@@ -153,7 +154,14 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const { error } = await supabase.from(QUEUE_TABLE).delete().eq("id", body.id);
+    const { error } = await supabase
+      .from(QUEUE_TABLE)
+      .update({
+        status: DELETED_STATUS,
+        run_mode: "dismissed",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", body.id);
 
     if (error) throw error;
 
