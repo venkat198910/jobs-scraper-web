@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/utils/supabase/server";
 
 const QUEUE_TABLE = "application_queue";
+const JOBS_TABLE = "jobs";
 const QUEUE_BUCKET = "resumes";
 const QUEUE_PREFIX = "application_queue";
 const DELETED_STATUS = "deleted";
+const SUBMITTED_STATUS = "submitted";
 
 type SupabaseClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
@@ -102,6 +104,22 @@ export async function PATCH(request: NextRequest) {
       .single();
 
     if (error) throw error;
+
+    if (updates.status === SUBMITTED_STATUS && data?.job_id) {
+      const { error: jobUpdateError } = await supabase
+        .from(JOBS_TABLE)
+        .update({
+          status: "applied",
+          application_date: new Date().toISOString(),
+          job_state: "new",
+          is_active: true,
+        })
+        .eq("job_id", data.job_id);
+
+      if (jobUpdateError) {
+        console.error("Error marking submitted queue job as applied:", jobUpdateError);
+      }
+    }
 
     return NextResponse.json({
       item: normalizeItem(data, "table"),
