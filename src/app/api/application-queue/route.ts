@@ -49,8 +49,10 @@ export async function GET() {
       throw error;
     }
 
+    const items = await enrichQueueItemsWithJobUrls(supabase, data ?? []);
+
     return NextResponse.json({
-      items: (data ?? []).map((item) => normalizeItem(item, "table")),
+      items: items.map((item) => normalizeItem(item, "table")),
       source: "table",
       storageFallback: false,
     });
@@ -259,16 +261,21 @@ function normalizeItem(
     asString(notes.resolved_apply_url) ??
     asString(notes.backfilled_apply_url) ??
     asString(notes.apply_url);
+  const portal = asString(item.portal);
+  const jobId = asString(item.job_id);
 
   return {
     id: asString(item.id),
-    job_id: asString(item.job_id),
+    job_id: jobId,
     customized_resume_id: asString(item.customized_resume_id),
     application_type: asString(item.application_type),
-    portal: asString(item.portal),
+    portal,
     status: asString(item.status),
     run_mode: asString(item.run_mode),
-    apply_url: asString(item.apply_url) ?? noteApplyUrl,
+    apply_url:
+      asString(item.apply_url) ??
+      noteApplyUrl ??
+      deriveProviderJobUrl(jobId, portal),
     resume_path: asString(item.resume_path),
     score: asNumber(item.score),
     notes,
@@ -278,8 +285,98 @@ function normalizeItem(
   };
 }
 
+function deriveProviderJobUrl(jobId?: string, portal?: string) {
+  const provider = (portal ?? "").toLowerCase();
+  if (!jobId || !["naukri", "naukri_gulf"].includes(provider)) {
+    return undefined;
+  }
+
+  const match = jobId.match(/(\d{8,})/);
+  if (!match) return undefined;
+
+  const host =
+    provider === "naukri_gulf" ? "www.naukrigulf.com" : "www.naukri.com";
+  return `https://${host}/job-listings-${match[1]}`;
+}
+
+async function enrichQueueItemsWithJobUrls(
+  supabase: SupabaseClient,
+  items: Record<string, unknown>[]
+) {
+  const missingUrlJobIds = Array.from(
+    new Set(
+      items
+        .filter(
+          (item) =>
+            !asString(item.apply_url) &&
+            !deriveProviderJobUrl(asString(item.job_id), asString(item.portal))
+        )
+        .map((item) => asString(item.job_id))
+        .filter((jobId): jobId is string => Boolean(jobId))
+    )
+  );
+
+  if (missingUrlJobIds.length === 0) return items;
+
+  let { data, error }: {
+    data: Record<string, unknown>[] | null;
+    error: { code?: string; message?: string } | null;
+  } = await supabase
+    .from(JOBS_TABLE)
+    .select("job_id,apply_url,job_url,career_url")
+    .in("job_id", missingUrlJobIds);
+
+  if (isMissingColumnError(error, "apply_url")) {
+    const fallback = await supabase
+      .from(JOBS_TABLE)
+      .select("job_id,job_url,career_url")
+      .in("job_id", missingUrlJobIds);
+    data = fallback.data;
+    error = fallback.error;
+  }
+
+  if (error) {
+    console.error("Error enriching queue job URLs:", error);
+    return items;
+  }
+
+  const urlsByJobId = new Map(
+    (data ?? [])
+      .map((job) => {
+        const jobId = asString(job.job_id);
+        const url =
+          asString(job.apply_url) ??
+          asString(job.job_url) ??
+          asString(job.career_url);
+        return jobId && url ? [jobId, url] : null;
+      })
+      .filter((entry): entry is [string, string] => Boolean(entry))
+  );
+
+  if (urlsByJobId.size === 0) return items;
+
+  return items.map((item) => {
+    const jobId = asString(item.job_id);
+    const applyUrl = jobId ? urlsByJobId.get(jobId) : undefined;
+    return applyUrl ? { ...item, apply_url: applyUrl } : item;
+  });
+}
+
 function asString(value: unknown) {
   return typeof value === "string" ? value : undefined;
+}
+
+function isMissingColumnError(
+  error: { code?: string; message?: string } | null,
+  columnName: string
+) {
+  if (!error) return false;
+  const message = (error.message ?? "").toLowerCase();
+  return (
+    error.code === "42703" ||
+    message.includes(`column jobs.${columnName}`) ||
+    message.includes(`'${columnName}' column`)
+  );
 }
 
 function asNumber(value: unknown) {
