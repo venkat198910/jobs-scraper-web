@@ -24,6 +24,8 @@ type ApplicationQueueItem = {
   run_mode?: string;
   apply_url?: string;
   resume_path?: string;
+  cover_letter_path?: string;
+  cover_letter_status?: string;
   score?: number;
   notes?: Record<string, unknown>;
   created_at?: string;
@@ -44,6 +46,12 @@ type QueueUpdateResponse = {
 
 type QueueDeleteResponse = {
   ok?: boolean;
+  error?: string;
+};
+
+type CoverLetterResponse = {
+  item?: ApplicationQueueItem;
+  signedUrl?: string;
   error?: string;
 };
 
@@ -81,6 +89,7 @@ export default function ApplicationQueueClient() {
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [coverLetterBusyId, setCoverLetterBusyId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<{
     key: "status" | "portal" | "run_mode" | null;
     value: string | null;
@@ -269,6 +278,54 @@ export default function ApplicationQueueClient() {
     }
   };
 
+  const generateCoverLetter = async (item: ApplicationQueueItem) => {
+    if (!item.id) {
+      alert("This row is missing its application queue ID.");
+      return;
+    }
+
+    setCoverLetterBusyId(item.id);
+    try {
+      const response = await fetch("/api/cover-letter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id }),
+      });
+      const payload = (await response.json()) as CoverLetterResponse;
+
+      if (!response.ok || !payload.item) {
+        throw new Error(payload.error ?? "Failed to generate cover letter");
+      }
+
+      setItems((current) =>
+        current.map((queueItem) =>
+          queueItem.id === item.id
+            ? {
+                ...queueItem,
+                ...payload.item,
+                notes: {
+                  ...(queueItem.notes ?? {}),
+                  ...(payload.item?.notes ?? {}),
+                },
+              }
+            : queueItem
+        )
+      );
+
+      if (payload.signedUrl) {
+        window.open(payload.signedUrl, "_blank", "noopener,noreferrer");
+      }
+    } catch (coverLetterError) {
+      alert(
+        coverLetterError instanceof Error
+          ? coverLetterError.message
+          : "Failed to generate cover letter"
+      );
+    } finally {
+      setCoverLetterBusyId(null);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -381,10 +438,12 @@ export default function ApplicationQueueClient() {
                   onFilter={applyFilter}
                   onUpdate={updateQueueItem}
                   onDelete={deleteQueueItem}
+                  onGenerateCoverLetter={generateCoverLetter}
                   isUpdating={updatingId === item.id}
                   isDeleting={
                     deletingId === (item.id ?? `${item.job_id}-${item.application_type}`)
                   }
+                  isGeneratingCoverLetter={coverLetterBusyId === item.id}
                 />
               ))}
             </div>
@@ -426,8 +485,10 @@ function ApplicationRow({
   onFilter,
   onUpdate,
   onDelete,
+  onGenerateCoverLetter,
   isUpdating,
   isDeleting,
+  isGeneratingCoverLetter,
 }: {
   item: ApplicationQueueItem;
   activeFilter: {
@@ -440,8 +501,10 @@ function ApplicationRow({
     updates: { status?: string; run_mode?: string }
   ) => Promise<void>;
   onDelete: (item: ApplicationQueueItem) => Promise<void>;
+  onGenerateCoverLetter: (item: ApplicationQueueItem) => Promise<void>;
   isUpdating: boolean;
   isDeleting: boolean;
+  isGeneratingCoverLetter: boolean;
 }) {
   const title = getNoteText(item, "job_title") ?? "Untitled job";
   const company = getNoteText(item, "company") ?? "Unknown company";
@@ -530,6 +593,26 @@ function ApplicationRow({
             >
               <FileText className="h-4 w-4" />
               Open Resume
+            </button>
+          )}
+          {item.cover_letter_path ? (
+            <button
+              type="button"
+              onClick={() => void openCoverLetter(item)}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 text-sm font-medium text-indigo-700 transition hover:border-indigo-300 hover:bg-white"
+            >
+              <FileText className="h-4 w-4" />
+              Open Cover Letter
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void onGenerateCoverLetter(item)}
+              disabled={isGeneratingCoverLetter}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <FileText className="h-4 w-4" />
+              {isGeneratingCoverLetter ? "Generating..." : "Generate Cover Letter"}
             </button>
           )}
           {item.apply_url && (
@@ -933,6 +1016,29 @@ async function openResume(item: ApplicationQueueItem) {
 
   if (!response.ok || !payload.signedUrl) {
     alert(payload.details ?? payload.error ?? "Could not open resume.");
+    return;
+  }
+
+  window.open(payload.signedUrl, "_blank", "noopener,noreferrer");
+}
+
+async function openCoverLetter(item: ApplicationQueueItem) {
+  if (!item.cover_letter_path) {
+    alert("Cover letter is not generated for this queued application.");
+    return;
+  }
+
+  const response = await fetch(
+    `/api/cover-letter?path=${encodeURIComponent(item.cover_letter_path)}`,
+    { cache: "no-store" }
+  );
+  const payload = (await response.json()) as {
+    signedUrl?: string;
+    error?: string;
+  };
+
+  if (!response.ok || !payload.signedUrl) {
+    alert(payload.error ?? "Could not open cover letter.");
     return;
   }
 

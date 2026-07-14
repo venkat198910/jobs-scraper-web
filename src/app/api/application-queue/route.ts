@@ -20,6 +20,8 @@ type ApplicationQueueItem = {
   run_mode?: string;
   apply_url?: string;
   resume_path?: string;
+  cover_letter_path?: string;
+  cover_letter_status?: string;
   score?: number;
   notes?: Record<string, unknown>;
   created_at?: string;
@@ -277,6 +279,10 @@ function normalizeItem(
       noteApplyUrl ??
       deriveProviderJobUrl(jobId, portal),
     resume_path: asString(item.resume_path),
+    cover_letter_path:
+      asString(item.cover_letter_path) ?? asString(notes.cover_letter_path),
+    cover_letter_status:
+      asString(item.cover_letter_status) ?? asString(notes.cover_letter_status),
     score: asNumber(item.score),
     notes,
     created_at: asString(item.created_at),
