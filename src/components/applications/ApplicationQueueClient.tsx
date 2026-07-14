@@ -520,22 +520,35 @@ function ApplicationRow({
 
   return (
     <article className="px-5 py-4">
-      <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+      <div className="grid gap-4 lg:grid-cols-[minmax(280px,430px)_1fr] lg:items-start">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="truncate text-base font-semibold text-slate-950">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+            <h3
+              className="truncate text-base font-semibold text-slate-950"
+              title={title}
+            >
               {title}
             </h3>
             {typeof item.score === "number" && (
-              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+              <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
                 {item.score}
               </span>
             )}
           </div>
-          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-slate-500">
-            <span>{company}</span>
-            {location && <span>{location}</span>}
-            {createdAt && <span>{createdAt}</span>}
+          <div className="mt-1 grid min-w-0 gap-x-3 gap-y-1 text-sm text-slate-500 sm:grid-cols-[minmax(0,110px)_minmax(0,1fr)_max-content]">
+            <span className="truncate" title={company}>
+              {company}
+            </span>
+            {location && (
+              <span className="truncate" title={location}>
+                {location}
+              </span>
+            )}
+            {createdAt && (
+              <span className="whitespace-nowrap" title={createdAt}>
+                {createdAt}
+              </span>
+            )}
           </div>
           <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
             <FilterBadge
