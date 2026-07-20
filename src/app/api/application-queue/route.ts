@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/utils/supabase/server";
+import { getKnownDirectJobUrl } from "@/lib/jobUrls";
 
 const QUEUE_TABLE = "application_queue";
 const JOBS_TABLE = "jobs";
@@ -265,6 +266,12 @@ function normalizeItem(
     asString(notes.apply_url);
   const portal = asString(item.portal);
   const jobId = asString(item.job_id);
+  const storedApplyUrl = asString(item.apply_url) ?? noteApplyUrl;
+  const knownDirectUrl = getKnownDirectJobUrl(
+    asString(notes.company),
+    asString(notes.job_title),
+    storedApplyUrl
+  );
 
   return {
     id: asString(item.id),
@@ -275,8 +282,8 @@ function normalizeItem(
     status: asString(item.status),
     run_mode: asString(item.run_mode),
     apply_url:
-      asString(item.apply_url) ??
-      noteApplyUrl ??
+      knownDirectUrl ??
+      storedApplyUrl ??
       deriveProviderJobUrl(jobId, portal),
     resume_path: asString(item.resume_path),
     cover_letter_path:
@@ -313,9 +320,17 @@ async function enrichQueueItemsWithJobUrls(
     new Set(
       items
         .filter(
-          (item) =>
-            !asString(item.apply_url) &&
-            !deriveProviderJobUrl(asString(item.job_id), asString(item.portal))
+          (item) => {
+            const applyUrl = asString(item.apply_url);
+            return (
+              (!applyUrl &&
+                !deriveProviderJobUrl(
+                  asString(item.job_id),
+                  asString(item.portal)
+                )) ||
+              isSynopsysCareerHomepage(applyUrl)
+            );
+          }
         )
         .map((item) => asString(item.job_id))
         .filter((jobId): jobId is string => Boolean(jobId))
@@ -329,13 +344,13 @@ async function enrichQueueItemsWithJobUrls(
     error: { code?: string; message?: string } | null;
   } = await supabase
     .from(JOBS_TABLE)
-    .select("job_id,apply_url,job_url,career_url")
+    .select("job_id,company,job_title,apply_url,job_url,career_url")
     .in("job_id", missingUrlJobIds);
 
   if (isMissingColumnError(error, "apply_url")) {
     const fallback = await supabase
       .from(JOBS_TABLE)
-      .select("job_id,job_url,career_url")
+      .select("job_id,company,job_title,job_url,career_url")
       .in("job_id", missingUrlJobIds);
     data = fallback.data;
     error = fallback.error;
@@ -351,6 +366,13 @@ async function enrichQueueItemsWithJobUrls(
       .map((job) => {
         const jobId = asString(job.job_id);
         const url =
+          getKnownDirectJobUrl(
+            asString(job.company),
+            asString(job.job_title),
+            asString(job.apply_url) ??
+              asString(job.job_url) ??
+              asString(job.career_url)
+          ) ??
           asString(job.apply_url) ??
           asString(job.job_url) ??
           asString(job.career_url);
@@ -366,6 +388,19 @@ async function enrichQueueItemsWithJobUrls(
     const applyUrl = jobId ? urlsByJobId.get(jobId) : undefined;
     return applyUrl ? { ...item, apply_url: applyUrl } : item;
   });
+}
+
+function isSynopsysCareerHomepage(value?: string) {
+  if (!value) return false;
+  try {
+    const parsed = new URL(value);
+    return (
+      parsed.hostname.toLowerCase() === "careers.synopsys.com" &&
+      parsed.pathname.replace(/\/+$/, "") === ""
+    );
+  } catch {
+    return false;
+  }
 }
 
 function asString(value: unknown) {
