@@ -288,7 +288,7 @@ export const defaultSettings: SettingsState = {
     jobExpiryDays: 7,
     jobCheckDays: 3,
     jobDeletionDays: 60,
-    appliedJobRetentionDays: 30,
+    appliedJobRetentionDays: 50,
     jobCheckLimit: 50,
     activeCheckTimeout: 20,
     activeCheckMaxRetries: 2,
