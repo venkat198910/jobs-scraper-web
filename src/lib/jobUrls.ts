@@ -3,7 +3,7 @@ import { Job } from "@/types";
 const KNOWN_DIRECT_JOB_URLS = new Map([
   [
     "synopsys|senior staff site reliability engineer",
-    "https://careers.synopsys.com/job/bengaluru/senior-staff-site-reliability-engineer/44408/95947919824",
+    "https://synopsys.avature.net/careers/Login?formValues=&jobId=17592&source=&tags=&user=",
   ],
 ]);
 
@@ -26,25 +26,22 @@ export function getKnownDirectJobUrl(
   jobTitle?: string | null,
   currentUrl?: string | null
 ) {
-  if (currentUrl) {
-    try {
-      const parsed = new URL(currentUrl);
-      if (
-        parsed.hostname.toLowerCase() === "careers.synopsys.com" &&
-        parsed.pathname.replace(/\/+$/, "")
-      ) {
-        return null;
-      }
-    } catch {
-      return null;
-    }
-  }
-
-  return (
+  const knownUrl =
     KNOWN_DIRECT_JOB_URLS.get(
       `${normalizeCompany(company)}|${normalizeLookupText(jobTitle)}`
-    ) ?? null
-  );
+    ) ?? null;
+  if (!knownUrl || !currentUrl) {
+    return knownUrl;
+  }
+
+  try {
+    const parsed = new URL(currentUrl);
+    return parsed.hostname.toLowerCase() === "careers.synopsys.com"
+      ? knownUrl
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 function getGreenhouseUrl(jobId: string) {
