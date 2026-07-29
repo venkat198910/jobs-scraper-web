@@ -518,7 +518,7 @@ function ApplicationRow({
     ["manual_review_required", "review_started", "portal_auth_required", "company_portal_review"].includes(
       item.status ?? ""
     );
-  const [isAnswerAgentOpen, setIsAnswerAgentOpen] = useState(showAnswerAgent);
+  const [isAnswerAgentOpen, setIsAnswerAgentOpen] = useState(false);
 
   return (
     <article className="px-5 py-4">
