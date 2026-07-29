@@ -555,9 +555,6 @@ function ApplicationRow({
           <div className="mt-2 flex flex-wrap gap-2 text-xs font-medium text-slate-600">
             {companyMetadata ? (
               <>
-                <span className="rounded-full bg-slate-50 px-2.5 py-1 ring-1 ring-slate-200">
-                  {companyMetadata.employees}
-                </span>
                 <span className="rounded-full bg-sky-50 px-2.5 py-1 text-sky-700 ring-1 ring-sky-200">
                   {companyMetadata.type}
                 </span>
@@ -566,6 +563,9 @@ function ApplicationRow({
                     Rating {companyMetadata.rating.toFixed(1)}
                   </span>
                 )}
+                <span className="rounded-full bg-slate-50 px-2.5 py-1 ring-1 ring-slate-200">
+                  {companyMetadata.employees}
+                </span>
               </>
             ) : (
               <span className="rounded-full bg-slate-50 px-2.5 py-1 text-slate-500 ring-1 ring-slate-200">
