@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/utils/supabase/server";
+import { getDynamicCompanyMetadata } from "@/lib/companyMetadata";
 import { getKnownDirectJobUrl } from "@/lib/jobUrls";
 
 const QUEUE_TABLE = "application_queue";
@@ -41,7 +42,9 @@ export async function GET() {
 
     if (error) {
       if (isMissingTableError(error)) {
-        const items = await getStorageQueueItems(supabase);
+        const items = await enrichQueueItemsWithCompanyMetadata(
+          await getStorageQueueItems(supabase)
+        );
         return NextResponse.json({
           items,
           source: "storage",
@@ -52,10 +55,13 @@ export async function GET() {
       throw error;
     }
 
-    const items = await enrichQueueItemsWithJobUrls(supabase, data ?? []);
+    const itemsWithUrls = await enrichQueueItemsWithJobUrls(supabase, data ?? []);
+    const items = await enrichQueueItemsWithCompanyMetadata(
+      itemsWithUrls.map((item) => normalizeItem(item, "table"))
+    );
 
     return NextResponse.json({
-      items: items.map((item) => normalizeItem(item, "table")),
+      items,
       source: "table",
       storageFallback: false,
     });
@@ -296,6 +302,38 @@ function normalizeItem(
     updated_at: asString(item.updated_at),
     source,
   };
+}
+
+async function enrichQueueItemsWithCompanyMetadata(items: ApplicationQueueItem[]) {
+  const uniqueCompanies = Array.from(
+    new Set(
+      items
+        .map((item) => asString(item.notes?.company))
+        .filter((company): company is string => Boolean(company))
+    )
+  );
+
+  const metadataEntries = await Promise.all(
+    uniqueCompanies.map(async (company) => [
+      company,
+      await getDynamicCompanyMetadata(company),
+    ] as const)
+  );
+  const metadataByCompany = new Map(metadataEntries);
+
+  return items.map((item) => {
+    const company = asString(item.notes?.company);
+    const companyMetadata = company ? metadataByCompany.get(company) : undefined;
+    if (!companyMetadata) return item;
+
+    return {
+      ...item,
+      notes: {
+        ...(item.notes ?? {}),
+        company_metadata: companyMetadata,
+      },
+    };
+  });
 }
 
 function deriveProviderJobUrl(jobId?: string, portal?: string) {

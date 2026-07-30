@@ -13,6 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { getCompanyMetadata } from "@/lib/companyMetadata";
+import type { CompanyMetadata } from "@/lib/companyMetadata";
 import { normalizeQuestionKey, normalizeSettings } from "@/lib/settings";
 
 type ApplicationQueueItem = {
@@ -509,7 +510,9 @@ function ApplicationRow({
 }) {
   const title = getNoteText(item, "job_title") ?? "Untitled job";
   const company = getNoteText(item, "company") ?? "Unknown company";
-  const companyMetadata = getCompanyMetadata(company);
+  const companyMetadata =
+    (getNoteRecord(item, "company_metadata") as CompanyMetadata | undefined) ??
+    getCompanyMetadata(company);
   const location = getNoteText(item, "location");
   const createdAt = formatDateTime(item.created_at);
   const missingQuestions = getMissingQuestions(item);
@@ -1084,6 +1087,13 @@ async function openCoverLetter(item: ApplicationQueueItem) {
 function getNoteText(item: ApplicationQueueItem, key: string) {
   const value = item.notes?.[key];
   return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function getNoteRecord(item: ApplicationQueueItem, key: string) {
+  const value = item.notes?.[key];
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value
+    : undefined;
 }
 
 function getMissingQuestions(item: ApplicationQueueItem): MissingQuestion[] {
