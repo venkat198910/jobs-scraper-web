@@ -14,8 +14,12 @@ const COMPANY_METADATA: Record<string, CompanyMetadata> = {
   "emirates nbd": { type: "Banking Technology", employees: "~30,000+", rating: 4.8 },
   "hycu": { type: "Product", employees: "~200-500", rating: 4.7 },
   "bmc software": { type: "Product", employees: "~6,000-7,000", rating: 4.6 },
+  "ig group": { type: "Product / Fintech", employees: "~2,000+", rating: 4.3 },
+  "shuru": { type: "Product / Consumer Platform", employees: "~200-500", rating: 4.0 },
+  "innova esi": { type: "Service Based", employees: "~5,000+", rating: 4.0 },
   "ust": { type: "Service Based", employees: "~30,000+", rating: 4.0 },
   "ust global": { type: "Service Based", employees: "~30,000+", rating: 4.0 },
+  "bosch global software technologies": { type: "Product Engineering / Service Based", employees: "~30,000+", rating: 4.3 },
   "google": { type: "Product", employees: "~180,000+", rating: 5.0 },
   "microsoft": { type: "Product", employees: "~220,000+", rating: 5.0 },
   "amazon": { type: "Product", employees: "~1,500,000+", rating: 4.8 },
@@ -60,10 +64,11 @@ export function getCompanyMetadata(company?: string): CompanyMetadata | undefine
   const normalized = normalizeCompanyName(company);
   if (!normalized) return undefined;
 
-  return (
+  const exactOrFuzzyMatch =
     COMPANY_METADATA[normalized] ??
-    Object.entries(COMPANY_METADATA).find(([name]) => normalized.includes(name) || name.includes(normalized))?.[1]
-  );
+    Object.entries(COMPANY_METADATA).find(([name]) => normalized.includes(name) || name.includes(normalized))?.[1];
+
+  return exactOrFuzzyMatch ?? inferCompanyMetadata(normalized);
 }
 
 function normalizeCompanyName(company?: string) {
@@ -71,4 +76,20 @@ function normalizeCompanyName(company?: string) {
     .toLowerCase()
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function inferCompanyMetadata(normalizedCompany: string): CompanyMetadata {
+  if (/\b(bank|capital|financial|finance|securities|payments|fintech)\b/.test(normalizedCompany)) {
+    return { type: "Banking Technology", employees: "Employee count unknown" };
+  }
+
+  if (
+    /\b(consulting|consultants|services|solutions|systems|technologies|technology|infotech|esi|outsourcing)\b/.test(
+      normalizedCompany,
+    )
+  ) {
+    return { type: "Service Based", employees: "Employee count unknown" };
+  }
+
+  return { type: "Product / Enterprise", employees: "Employee count unknown" };
 }
