@@ -109,40 +109,69 @@ async function getWikidataCompanyMetadata(normalizedCompany: string): Promise<Co
     searchUrl.searchParams.set("search", normalizedCompany);
     searchUrl.searchParams.set("language", "en");
     searchUrl.searchParams.set("format", "json");
-    searchUrl.searchParams.set("limit", "1");
+    searchUrl.searchParams.set("limit", "5");
     searchUrl.searchParams.set("origin", "*");
 
     const searchResponse = await fetch(searchUrl, { next: { revalidate: 60 * 60 * 24 * 14 } });
     if (!searchResponse.ok) throw new Error(`Wikidata search failed: ${searchResponse.status}`);
 
-    const searchJson = (await searchResponse.json()) as { search?: Array<{ id?: string }> };
-    const entityId = searchJson.search?.[0]?.id;
-    if (!entityId) {
-      dynamicMetadataCache.set(normalizedCompany, undefined);
-      return undefined;
-    }
-
-    const entityResponse = await fetch(`https://www.wikidata.org/wiki/Special:EntityData/${entityId}.json`, {
-      next: { revalidate: 60 * 60 * 24 * 14 },
-    });
-    if (!entityResponse.ok) throw new Error(`Wikidata entity failed: ${entityResponse.status}`);
-
-    const entityJson = (await entityResponse.json()) as WikidataEntityResponse;
-    const entity = entityJson.entities?.[entityId];
-    if (!entity) {
-      dynamicMetadataCache.set(normalizedCompany, undefined);
-      return undefined;
-    }
-
-    const employees = formatWikidataEmployees(entity.claims?.P1128?.[0]?.mainsnak?.datavalue?.value?.amount);
-    const labels = await getWikidataLabels(getWikidataClaimEntityIds(entity, ["P31", "P452"]));
-    const type = inferCompanyTypeFromLabels(normalizedCompany, labels);
-    const metadata: CompanyMetadata = {
-      type,
-      employees: employees ?? "Employee count unknown",
-      rating: estimateRating(type, employees),
-      source: "wikidata",
+    const searchJson = (await searchResponse.json()) as {
+      search?: Array<{ id?: string; description?: string; label?: string }>;
     };
+    const candidates = (searchJson.search ?? []).filter((candidate) => Boolean(candidate.id));
+    if (candidates.length === 0) {
+      dynamicMetadataCache.set(normalizedCompany, undefined);
+      return undefined;
+    }
+
+    const metadataCandidates = (
+      await Promise.all(
+        candidates.map(async (candidate): Promise<WikidataMetadataCandidate | undefined> => {
+          const entityId = candidate.id;
+          if (!entityId) return undefined;
+
+          const entityResponse = await fetch(`https://www.wikidata.org/wiki/Special:EntityData/${entityId}.json`, {
+            next: { revalidate: 60 * 60 * 24 * 14 },
+          });
+          if (!entityResponse.ok) return undefined;
+
+          const entityJson = (await entityResponse.json()) as WikidataEntityResponse;
+          const entity = entityJson.entities?.[entityId];
+          if (!entity) return undefined;
+
+          const employees = formatWikidataEmployees(entity.claims?.P1128?.[0]?.mainsnak?.datavalue?.value?.amount);
+          const labels = await getWikidataLabels(getWikidataClaimEntityIds(entity, ["P31", "P452"]));
+          const type = inferCompanyTypeFromLabels(normalizedCompany, labels);
+          const description = `${candidate.label ?? ""} ${candidate.description ?? ""}`.toLowerCase();
+          const isCompanyLike =
+            labels.some((label) => /\b(company|business|enterprise|corporation|organization|manufacturer)\b/.test(label)) ||
+            /\b(company|corporation|manufacturer|technology|software|bank|financial|enterprise|multinational)\b/.test(
+              description,
+            );
+
+          return {
+            metadata: {
+              type,
+              employees: employees ?? "Employee count unknown",
+              rating: estimateRating(type, employees),
+              source: "wikidata" as const,
+            },
+            score:
+              (employees ? 8 : 0) +
+              (isCompanyLike ? 5 : 0) +
+              (/Product|Service Based|Banking Technology/.test(type) ? 2 : 0),
+          };
+        }),
+      )
+    )
+      .filter((candidate): candidate is WikidataMetadataCandidate => Boolean(candidate))
+      .sort((a, b) => b.score - a.score);
+
+    const metadata = metadataCandidates[0]?.metadata;
+    if (!metadata) {
+      dynamicMetadataCache.set(normalizedCompany, undefined);
+      return undefined;
+    }
 
     dynamicMetadataCache.set(normalizedCompany, metadata);
     return metadata;
@@ -171,6 +200,11 @@ type WikidataEntityResponse = {
       >;
     }
   >;
+};
+
+type WikidataMetadataCandidate = {
+  metadata: CompanyMetadata;
+  score: number;
 };
 
 function getWikidataClaimEntityIds(entity: NonNullable<WikidataEntityResponse["entities"]>[string], properties: string[]) {
@@ -232,8 +266,12 @@ function inferCompanyTypeFromLabels(normalizedCompany: string, labels: string[])
   return inferCompanyMetadata(normalizedCompany).type;
 }
 
-function estimateRating(type: string, employees?: string) {
-  if (!employees || employees === "Employee count unknown") return undefined;
+function estimateRating(type: string, employees?: string): number {
+  if (!employees || employees === "Employee count unknown") {
+    if (/Product|Banking Technology/.test(type)) return 4.1;
+    if (/Service Based/.test(type)) return 4.0;
+    return 4.0;
+  }
   if (/Product|Banking Technology/.test(type)) return 4.2;
   if (/Service Based/.test(type)) return 4.0;
   return 4.1;
@@ -241,7 +279,7 @@ function estimateRating(type: string, employees?: string) {
 
 function inferCompanyMetadata(normalizedCompany: string): CompanyMetadata {
   if (/\b(bank|capital|financial|finance|securities|payments|fintech)\b/.test(normalizedCompany)) {
-    return { type: "Banking Technology", employees: "Employee count unknown", source: "inferred" };
+    return { type: "Banking Technology", employees: "Employee count unknown", rating: 4.1, source: "inferred" };
   }
 
   if (
@@ -249,8 +287,8 @@ function inferCompanyMetadata(normalizedCompany: string): CompanyMetadata {
       normalizedCompany,
     )
   ) {
-    return { type: "Service Based", employees: "Employee count unknown", source: "inferred" };
+    return { type: "Service Based", employees: "Employee count unknown", rating: 4.0, source: "inferred" };
   }
 
-  return { type: "Product / Enterprise", employees: "Employee count unknown", source: "inferred" };
+  return { type: "Product / Enterprise", employees: "Employee count unknown", rating: 4.0, source: "inferred" };
 }
