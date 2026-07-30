@@ -5,6 +5,10 @@ const KNOWN_DIRECT_JOB_URLS = new Map([
     "synopsys|senior staff site reliability engineer",
     "https://synopsys.avature.net/careers/Login?formValues=&jobId=17592&source=&tags=&user=",
   ],
+  [
+    "philips|platform system engineer",
+    "https://philips.wd3.myworkdayjobs.com/jobs-and-careers/job/Bangalore/Platform-System-Engineer_585331",
+  ],
 ]);
 
 function normalizeLookupText(value?: string | null) {
@@ -35,12 +39,23 @@ export function getKnownDirectJobUrl(
   }
 
   try {
-    const parsed = new URL(currentUrl);
-    return parsed.hostname.toLowerCase() === "careers.synopsys.com"
-      ? knownUrl
-      : null;
-  } catch {
+    const parsedCurrentUrl = new URL(currentUrl);
+    const parsedKnownUrl = new URL(knownUrl);
+    const currentPath = parsedCurrentUrl.pathname.replace(/\/+$/, "");
+    const knownPath = parsedKnownUrl.pathname.replace(/\/+$/, "");
+
+    if (
+      currentPath === "" ||
+      currentPath === "/" ||
+      parsedCurrentUrl.hostname.toLowerCase() === "careers.synopsys.com" ||
+      currentPath !== knownPath
+    ) {
+      return knownUrl;
+    }
+
     return null;
+  } catch {
+    return knownUrl;
   }
 }
 
