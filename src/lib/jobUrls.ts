@@ -9,6 +9,14 @@ const KNOWN_DIRECT_JOB_URLS = new Map([
     "philips|platform system engineer",
     "https://philips.wd3.myworkdayjobs.com/jobs-and-careers/job/Bangalore/Platform-System-Engineer_585331",
   ],
+  [
+    "pwc global|in senior associate observability gcc advisory bangalore",
+    "https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Bengaluru-Millenia/IN-Senior-Associate-Observability-GCC-Advisory-Bangalore_746378WD-1",
+  ],
+  [
+    "pwc global|in manager devops engineer gcc advisory bangalore",
+    "https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Bengaluru-Millenia/IN-Manager--DevOps-Engineer-GCC-Advisory-Bangalore_746355WD-1",
+  ],
 ]);
 
 function normalizeLookupText(value?: string | null) {

@@ -366,7 +366,11 @@ async function enrichQueueItemsWithJobUrls(
                   asString(item.job_id),
                   asString(item.portal)
                 )) ||
-              isSynopsysCareerHomepage(applyUrl)
+              isWeakApplicationUrl(
+                applyUrl,
+                asString(item.portal),
+                asString(item.job_id)
+              )
             );
           }
         )
@@ -419,25 +423,102 @@ async function enrichQueueItemsWithJobUrls(
       .filter((entry): entry is [string, string] => Boolean(entry))
   );
 
-  if (urlsByJobId.size === 0) return items;
+  const resolvedWeakUrls = new Map(
+    (
+      await Promise.all(
+        items.map(async (item) => {
+          const jobId = asString(item.job_id);
+          if (!jobId) return null;
+          const currentUrl = urlsByJobId.get(jobId) ?? asString(item.apply_url);
+          const resolvedUrl = await resolveKnownAtsJobUrl(item, currentUrl);
+          return resolvedUrl ? [jobId, resolvedUrl] : null;
+        })
+      )
+    ).filter((entry): entry is [string, string] => Boolean(entry))
+  );
 
   return items.map((item) => {
     const jobId = asString(item.job_id);
-    const applyUrl = jobId ? urlsByJobId.get(jobId) : undefined;
+    const applyUrl = jobId ? resolvedWeakUrls.get(jobId) ?? urlsByJobId.get(jobId) : undefined;
     return applyUrl ? { ...item, apply_url: applyUrl } : item;
   });
 }
 
-function isSynopsysCareerHomepage(value?: string) {
+function isWeakApplicationUrl(value?: string, portal?: string, jobId?: string) {
   if (!value) return false;
   try {
     const parsed = new URL(value);
-    return (
-      parsed.hostname.toLowerCase() === "careers.synopsys.com" &&
-      parsed.pathname.replace(/\/+$/, "") === ""
-    );
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.replace(/\/+$/, "");
+    if (host === "careers.synopsys.com" && path === "") return true;
+    if ((portal ?? "").toLowerCase() === "workday" || (jobId ?? "").startsWith("workday-")) {
+      return path === "" || /^\/[^/]+$/.test(path);
+    }
+    return false;
   } catch {
     return false;
+  }
+}
+
+async function resolveKnownAtsJobUrl(item: Record<string, unknown>, currentUrl?: string) {
+  const jobId = asString(item.job_id);
+  if (!jobId || !currentUrl || !isWeakApplicationUrl(currentUrl, asString(item.portal), jobId)) {
+    return undefined;
+  }
+
+  return resolveWorkdayJobUrl(jobId, currentUrl);
+}
+
+async function resolveWorkdayJobUrl(jobId: string, currentUrl: string) {
+  const match = jobId.match(/^workday-([^-]+)-(.+)-([a-z0-9]+)$/i);
+  if (!match) return undefined;
+
+  const tenant = match[1];
+  const site = match[2];
+  const requisitionId = match[3];
+
+  let parsedCurrentUrl: URL;
+  try {
+    parsedCurrentUrl = new URL(currentUrl);
+  } catch {
+    return undefined;
+  }
+
+  if (!/\.myworkdayjobs\.com$/i.test(parsedCurrentUrl.hostname)) {
+    return undefined;
+  }
+
+  const listUrl = `https://${parsedCurrentUrl.hostname}/wday/cxs/${tenant}/${site}/jobs`;
+  try {
+    const response = await fetch(listUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        appliedFacets: {},
+        limit: 50,
+        offset: 0,
+        searchText: requisitionId.toUpperCase(),
+      }),
+      next: { revalidate: 60 * 60 * 24 },
+    });
+    if (!response.ok) return undefined;
+    const json = (await response.json()) as {
+      jobPostings?: Array<{ externalPath?: string; title?: string; bulletFields?: string[] }>;
+    };
+    const normalizedReq = requisitionId.toLowerCase();
+    const posting = (json.jobPostings ?? []).find((candidate) => {
+      const text = `${candidate.externalPath ?? ""} ${candidate.title ?? ""} ${(candidate.bulletFields ?? []).join(" ")}`.toLowerCase();
+      return text.includes(normalizedReq);
+    });
+    const externalPath = posting?.externalPath;
+    if (!externalPath) return undefined;
+    if (externalPath.startsWith("http")) return externalPath;
+    if (externalPath.startsWith("/job/")) {
+      return `https://${parsedCurrentUrl.hostname}/${site}${externalPath}`;
+    }
+    return `https://${parsedCurrentUrl.hostname}${externalPath}`;
+  } catch {
+    return undefined;
   }
 }
 
