@@ -17,6 +17,10 @@ const KNOWN_DIRECT_JOB_URLS = new Map([
     "pwc global|in manager devops engineer gcc advisory bangalore",
     "https://pwc.wd3.myworkdayjobs.com/Global_Experienced_Careers/job/Bengaluru-Millenia/IN-Manager--DevOps-Engineer-GCC-Advisory-Bangalore_746355WD-1",
   ],
+  [
+    "netapp|software engineer golang and kubernetes",
+    "https://careers.netapp.com/job/bengaluru/software-engineer-golang-and-kubernetes/27600/97774225200",
+  ],
 ]);
 
 function normalizeLookupText(value?: string | null) {
