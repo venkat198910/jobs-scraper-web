@@ -21,6 +21,10 @@ const KNOWN_DIRECT_JOB_URLS = new Map([
     "netapp|software engineer golang and kubernetes",
     "https://careers.netapp.com/job/bengaluru/software-engineer-golang-and-kubernetes/27600/97774225200",
   ],
+  [
+    "crowdstrike|sr engineer cloud",
+    "https://crowdstrike.wd5.myworkdayjobs.com/en-US/crowdstrikecareers/job/Sr-Engineer---Cloud_R27530",
+  ],
 ]);
 
 function normalizeLookupText(value?: string | null) {
