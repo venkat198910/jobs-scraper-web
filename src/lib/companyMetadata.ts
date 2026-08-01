@@ -15,6 +15,7 @@ const COMPANY_METADATA: Record<string, CompanyMetadata> = {
   "emirates nbd": { type: "Banking Technology", employees: "~30,000+", rating: 4.8 },
   "hycu": { type: "Product", employees: "~200-500", rating: 4.7 },
   "bmc software": { type: "Product", employees: "~6,000-7,000", rating: 4.6 },
+  "metropolis technologies": { type: "Product", employees: "Employee count unknown", rating: 4.2 },
   "ig group": { type: "Product / Fintech", employees: "~2,000+", rating: 4.3 },
   "shuru": { type: "Product / Consumer Platform", employees: "~200-500", rating: 4.0 },
   "innova esi": { type: "Service Based", employees: "~5,000+", rating: 4.0 },
@@ -260,7 +261,7 @@ function inferCompanyTypeFromLabels(normalizedCompany: string, labels: string[])
   if (/\b(consulting|information technology consulting|outsourcing|professional services|service provider)\b/.test(text)) {
     return "Service Based";
   }
-  if (/\b(software|saas|cloud computing|technology company|internet company|e-commerce|computer hardware)\b/.test(text)) {
+  if (/\b(software|saas|cloud computing|technology company|internet company|e-commerce|computer hardware|technology|technologies)\b/.test(text)) {
     return "Product";
   }
   return inferCompanyMetadata(normalizedCompany).type;
@@ -283,7 +284,7 @@ function inferCompanyMetadata(normalizedCompany: string): CompanyMetadata {
   }
 
   if (
-    /\b(consulting|consultants|services|solutions|systems|technologies|technology|infotech|esi|outsourcing)\b/.test(
+    /\b(consulting|consultants|services|solutions|systems integrator|infotech|esi|outsourcing)\b/.test(
       normalizedCompany,
     )
   ) {
