@@ -470,12 +470,11 @@ async function resolveKnownAtsJobUrl(item: Record<string, unknown>, currentUrl?:
 }
 
 async function resolveWorkdayJobUrl(jobId: string, currentUrl: string) {
-  const match = jobId.match(/^workday-([^-]+)-(.+)-([a-z0-9]+)$/i);
+  const match = jobId.match(/^workday-([^-]+)-(.+)$/i);
   if (!match) return undefined;
 
   const tenant = match[1];
-  const site = match[2];
-  const requisitionId = match[3];
+  const siteAndRequisition = match[2];
 
   let parsedCurrentUrl: URL;
   try {
@@ -487,6 +486,14 @@ async function resolveWorkdayJobUrl(jobId: string, currentUrl: string) {
   if (!/\.myworkdayjobs\.com$/i.test(parsedCurrentUrl.hostname)) {
     return undefined;
   }
+
+  const currentSite = parsedCurrentUrl.pathname.split("/").filter(Boolean)[0];
+  const site =
+    currentSite && siteAndRequisition.toLowerCase().startsWith(`${currentSite.toLowerCase()}-`)
+      ? currentSite
+      : siteAndRequisition.replace(/-[^-]+$/, "");
+  const requisitionId = siteAndRequisition.slice(site.length + 1);
+  if (!site || !requisitionId) return undefined;
 
   const listUrl = `https://${parsedCurrentUrl.hostname}/wday/cxs/${tenant}/${site}/jobs`;
   try {

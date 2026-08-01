@@ -25,6 +25,10 @@ const KNOWN_DIRECT_JOB_URLS = new Map([
     "crowdstrike|sr engineer cloud",
     "https://crowdstrike.wd5.myworkdayjobs.com/en-US/crowdstrikecareers/job/Sr-Engineer---Cloud_R27530",
   ],
+  [
+    "astrazeneca|associate director devsecops cloud engineering",
+    "https://astrazeneca.wd3.myworkdayjobs.com/Careers/job/India---Bangalore/Associate-Director---DevSecOps---Cloud-Engineering_R-257477",
+  ],
 ]);
 
 function normalizeLookupText(value?: string | null) {
