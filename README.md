@@ -54,6 +54,29 @@ Once the backend is successfully set up and running, you can proceed with settin
 
 ### Installation
 
+#### Recommended automatic setup
+
+If this repo is checked out next to the backend `job-scraper` repo, run the backend bootstrap. It sets up both projects and writes the correct cross-platform assistant paths automatically:
+
+Windows PowerShell:
+
+```powershell
+cd ..\job-scraper
+.\setup.ps1
+```
+
+macOS/Linux:
+
+```bash
+cd ../job-scraper
+chmod +x setup.sh
+./setup.sh
+```
+
+The bootstrap creates/updates this repo's `.env.local`, installs npm dependencies, and points the UI to the backend Python virtual environment on Windows, macOS, or Linux.
+
+#### Manual setup
+
 1.  **Clone the repository (if applicable):**
 
     ```bash

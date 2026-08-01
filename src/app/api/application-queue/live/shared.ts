@@ -42,8 +42,13 @@ export function resolvePythonExecutable(assistantDir: string) {
     return process.env.APPLICATION_ASSISTANT_PYTHON;
   }
 
-  const venvPython = path.join(assistantDir, ".venv", "bin", "python");
-  return existsSync(venvPython) ? venvPython : "python3";
+  const candidates = [
+    path.join(assistantDir, ".venv", "Scripts", "python.exe"),
+    path.join(assistantDir, ".venv", "bin", "python"),
+    path.join(assistantDir, ".venv", "bin", "python3"),
+  ];
+  const venvPython = candidates.find((candidate) => existsSync(candidate));
+  return venvPython ?? (process.platform === "win32" ? "python" : "python3");
 }
 
 export function shouldUseLinkedinEasyApply(body: {
