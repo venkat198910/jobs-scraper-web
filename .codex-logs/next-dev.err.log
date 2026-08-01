@@ -82,3 +82,27 @@ Error enriching queue job URLs: {
   hint: 'Perhaps you meant to reference the column "jobs.job_id".',
   message: 'column jobs.job_url does not exist'
 }
+Error enriching queue job URLs: {
+  code: '42703',
+  details: null,
+  hint: 'Perhaps you meant to reference the column "jobs.job_id".',
+  message: 'column jobs.job_url does not exist'
+}
+Error enriching queue job URLs: {
+  code: '42703',
+  details: null,
+  hint: 'Perhaps you meant to reference the column "jobs.job_id".',
+  message: 'column jobs.job_url does not exist'
+}
+Error enriching queue job URLs: {
+  code: '42703',
+  details: null,
+  hint: 'Perhaps you meant to reference the column "jobs.job_id".',
+  message: 'column jobs.job_url does not exist'
+}
+Error enriching queue job URLs: {
+  code: '42703',
+  details: null,
+  hint: 'Perhaps you meant to reference the column "jobs.job_id".',
+  message: 'column jobs.job_url does not exist'
+}

@@ -46,3 +46,17 @@ Server's Local Date for Query: 2026-08-01
  GET /api/application-queue 200 in 3.9s (compile: 10ms, render: 3.9s)
  GET /applications 200 in 165ms (compile: 9ms, render: 156ms)
  GET /api/application-queue 200 in 2.8s (compile: 7ms, render: 2.8s)
+ GET /applications 200 in 98ms (compile: 13ms, render: 85ms)
+ GET /api/application-queue 200 in 1962ms (compile: 15ms, render: 1947ms)
+ GET /api/application-queue 200 in 1923ms (compile: 6ms, render: 1917ms)
+Server's Local Date for Query: 2026-08-01
+ GET / 200 in 8.8s (compile: 12ms, render: 8.8s)
+○ Compiling /profile ...
+ GET /profile 200 in 5.8s (compile: 4.6s, render: 1133ms)
+ PATCH /api/base-resume 200 in 2.6s (compile: 994ms, render: 1616ms)
+ GET /applications 200 in 74ms (compile: 10ms, render: 64ms)
+ GET /api/application-queue 200 in 2.6s (compile: 12ms, render: 2.6s)
+ GET /api/application-queue 200 in 2.7s (compile: 8ms, render: 2.7s)
+ GET /api/customized_resumes/8dd4dd32-435a-4644-951f-c13ab4885a37/signed-url 200 in 1274ms (compile: 52ms, render: 1222ms)
+ POST /api/cover-letter 200 in 3.5s (compile: 744ms, render: 2.8s)
+ GET /api/customized_resumes/8dd4dd32-435a-4644-951f-c13ab4885a37/signed-url 200 in 1595ms (compile: 33ms, render: 1562ms)
