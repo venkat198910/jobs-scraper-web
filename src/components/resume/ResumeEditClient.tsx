@@ -109,7 +109,11 @@ export default function ResumeEditClient({
       const pdfBlob = await pdfResponse.blob();
 
       // Convert blob to File (for Supabase upload)
-      const fileName = `resume_${job_id}.pdf`;
+      const candidateName =
+        resumeDataForPdf.name ||
+        (resumeDataForPdf as Resume & { full_name?: string }).full_name ||
+        "Venkateswarlu Derangula";
+      const fileName = `${slugifyFilePart(candidateName, "venkateswarlu_derangula").slice(0, 28)}_resume_${slugifyFilePart(compactJobId(job_id), "job").slice(0, 24)}.pdf`;
       const file = new File([pdfBlob], fileName, { type: "application/pdf" });
 
       // Upload the file using the existing API endpoint
@@ -326,4 +330,23 @@ export default function ResumeEditClient({
       </div>
     </div>
   );
+}
+
+function compactJobId(value: string) {
+  const text = String(value || "").trim().toLowerCase();
+  if (text.startsWith("workday-")) {
+    const match = text.match(/-([a-z]+-\d+[a-z0-9-]*|\d+[a-z0-9]*)$/);
+    if (match?.[1]) return match[1];
+  }
+  return text;
+}
+
+function slugifyFilePart(value: string, fallback: string) {
+  const slug = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return slug || fallback;
 }

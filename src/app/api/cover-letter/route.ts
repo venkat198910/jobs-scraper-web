@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       resume,
     });
     const pdf = await renderCoverLetterPdf(coverLetter);
-    const path = buildCoverLetterPath(queueItem, notes, job);
+    const path = buildCoverLetterPath(queueItem, notes, job, resume);
 
     const { error: uploadError } = await supabase.storage
       .from(COVER_BUCKET)
@@ -301,15 +301,24 @@ async function renderCoverLetterPdf(letter: ReturnType<typeof buildCoverLetter>)
 function buildCoverLetterPath(
   queueItem: RecordValue,
   notes: RecordValue,
-  job?: RecordValue
+  job?: RecordValue,
+  resume?: RecordValue
 ) {
   const jobId = asString(queueItem.job_id) ?? "job";
-  const company =
-    asString(job?.company) ??
-    asString(job?.company_name) ??
-    asString(notes.company) ??
-    "company";
-  return `cover_letters/cover_letter_${slugify(company).slice(0, 28)}_${slugify(jobId).slice(0, 24)}.pdf`;
+  const candidateName =
+    asString(resume?.name) ??
+    asString(resume?.full_name) ??
+    "Venkateswarlu Derangula";
+  return `cover_letters/${slugify(candidateName).slice(0, 28)}_cover_letter_${slugify(compactJobId(jobId)).slice(0, 24)}.pdf`;
+}
+
+function compactJobId(value: string) {
+  const text = value.trim().toLowerCase();
+  if (text.startsWith("workday-")) {
+    const match = text.match(/-([a-z]+-\d+[a-z0-9-]*|\d+[a-z0-9]*)$/);
+    if (match?.[1]) return match[1];
+  }
+  return text;
 }
 
 function pickEmphasis(text: string) {

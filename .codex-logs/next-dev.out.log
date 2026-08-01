@@ -1,0 +1,48 @@
+
+> jobs-scrapper-web@0.1.0 dev
+> next dev --hostname 0.0.0.0 --port 3000
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://0.0.0.0:3000
+- Environments: .env.local
+
+✓ Starting...
+Creating turbopack project { dir: 'C:\\Users\\venka\\repos\\jobs-scraper-web', testMode: true }
+✓ Ready in 8.8s
+○ Compiling /applications ...
+ GET /applications 200 in 6.6s (compile: 5.9s, render: 762ms)
+ GET /api/application-queue 200 in 8.7s (compile: 858ms, render: 7.8s)
+ GET /api/application-queue 200 in 1751ms (compile: 9ms, render: 1742ms)
+Server's Local Date for Query: 2026-08-01
+ GET / 200 in 25.0s (compile: 4.1s, render: 20.9s)
+ GET /api/application-queue 200 in 3.1s (compile: 105ms, render: 3.0s)
+ PATCH /api/application-queue 200 in 1866ms (compile: 30ms, render: 1836ms)
+ GET /applications 200 in 162ms (compile: 21ms, render: 141ms)
+ GET /api/application-queue 200 in 4.4s (compile: 4ms, render: 4.4s)
+ GET /applications 200 in 75ms (compile: 5ms, render: 70ms)
+ GET /api/application-queue 200 in 1112ms (compile: 6ms, render: 1106ms)
+ GET /applications 200 in 93ms (compile: 4ms, render: 89ms)
+ GET /api/application-queue 200 in 1034ms (compile: 4ms, render: 1031ms)
+ GET /api/customized_resumes/39deeae8-dadf-4eff-8cf1-faed8d7fdd30/signed-url 200 in 1773ms (compile: 906ms, render: 867ms)
+ GET /api/customized_resumes/2f958cc3-757d-403c-bfa2-e99b4a39fb75/signed-url 200 in 1826ms (compile: 15ms, render: 1811ms)
+ GET /applications 200 in 439ms (compile: 27ms, render: 411ms)
+ GET /api/application-queue 200 in 3.4s (compile: 27ms, render: 3.4s)
+ GET /applications 200 in 253ms (compile: 5ms, render: 248ms)
+ GET /api/application-queue 200 in 1394ms (compile: 8ms, render: 1386ms)
+ GET /api/customized_resumes/39deeae8-dadf-4eff-8cf1-faed8d7fdd30/signed-url 200 in 1315ms (compile: 15ms, render: 1300ms)
+✓ Compiled in 423ms
+ GET /api/application-queue 200 in 8.0s (compile: 384ms, render: 7.6s)
+ DELETE /api/application-queue 200 in 1245ms (compile: 8ms, render: 1238ms)
+ GET /applications 200 in 685ms (compile: 288ms, render: 396ms)
+ GET /api/application-queue 200 in 2.5s (compile: 8ms, render: 2.4s)
+✓ Compiled in 224ms
+ GET /api/application-queue 200 in 8.4s (compile: 213ms, render: 8.2s)
+ GET /api/customized_resumes/39deeae8-dadf-4eff-8cf1-faed8d7fdd30/signed-url 200 in 1380ms (compile: 22ms, render: 1359ms)
+ PATCH /api/application-queue 200 in 1519ms (compile: 4ms, render: 1515ms)
+ GET /applications 200 in 1537ms (compile: 364ms, render: 1173ms)
+ GET /api/application-queue 200 in 3.6s (compile: 25ms, render: 3.6s)
+ GET /applications 200 in 154ms (compile: 7ms, render: 147ms)
+ GET /api/application-queue 200 in 3.9s (compile: 10ms, render: 3.9s)
+ GET /applications 200 in 165ms (compile: 9ms, render: 156ms)
+ GET /api/application-queue 200 in 2.8s (compile: 7ms, render: 2.8s)

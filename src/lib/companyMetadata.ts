@@ -22,6 +22,7 @@ const COMPANY_METADATA: Record<string, CompanyMetadata> = {
   "innova esi": { type: "Service Based", employees: "~5,000+", rating: 4.0 },
   "ust": { type: "Service Based", employees: "~30,000+", rating: 4.0 },
   "ust global": { type: "Service Based", employees: "~30,000+", rating: 4.0 },
+  "version 1": { type: "Service Based", employees: "~3,000+", rating: 4.1 },
   "bosch global software technologies": { type: "Product Engineering / Service Based", employees: "~30,000+", rating: 4.3 },
   "google": { type: "Product", employees: "~180,000+", rating: 5.0 },
   "microsoft": { type: "Product", employees: "~220,000+", rating: 5.0 },
@@ -259,10 +260,14 @@ function inferCompanyTypeFromLabels(normalizedCompany: string, labels: string[])
   if (/\b(bank|banking|financial services|investment|securities|fintech|payments)\b/.test(text)) {
     return "Banking Technology";
   }
-  if (/\b(consulting|information technology consulting|outsourcing|professional services|service provider)\b/.test(text)) {
+  if (
+    /\b(consulting|information technology consulting|outsourcing|professional services|service provider|it services|managed services|digital transformation|systems integrator)\b/.test(
+      text,
+    )
+  ) {
     return "Service Based";
   }
-  if (/\b(software|saas|cloud computing|technology company|internet company|e-commerce|computer hardware|technology|technologies)\b/.test(text)) {
+  if (/\b(software company|software|saas|cloud computing|internet company|e-commerce|computer hardware|product company)\b/.test(text)) {
     return "Product";
   }
   return inferCompanyMetadata(normalizedCompany).type;
@@ -285,12 +290,12 @@ function inferCompanyMetadata(normalizedCompany: string): CompanyMetadata {
   }
 
   if (
-    /\b(consulting|consultants|services|solutions|systems integrator|infotech|esi|outsourcing)\b/.test(
+    /\b(consulting|consultants|services|solutions|systems integrator|infotech|esi|outsourcing|managed services|professional services)\b/.test(
       normalizedCompany,
     )
   ) {
     return { type: "Service Based", employees: "Employee count unknown", rating: 4.0, source: "inferred" };
   }
 
-  return { type: "Product / Enterprise", employees: "Employee count unknown", rating: 4.0, source: "inferred" };
+  return { type: "Company type unknown", employees: "Employee count unknown", source: "inferred" };
 }
