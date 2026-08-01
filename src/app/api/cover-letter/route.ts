@@ -304,12 +304,12 @@ function buildCoverLetterPath(
   job?: RecordValue
 ) {
   const jobId = asString(queueItem.job_id) ?? "job";
-  const title =
-    asString(job?.title) ??
-    asString(job?.job_title) ??
-    asString(notes.job_title) ??
-    "cover-letter";
-  return `cover_letters/venkateswarlu_derangula_${slugify(title)}_${jobId}.pdf`;
+  const company =
+    asString(job?.company) ??
+    asString(job?.company_name) ??
+    asString(notes.company) ??
+    "company";
+  return `cover_letters/cover_letter_${slugify(company).slice(0, 28)}_${slugify(jobId).slice(0, 24)}.pdf`;
 }
 
 function pickEmphasis(text: string) {
