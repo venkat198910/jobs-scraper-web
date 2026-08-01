@@ -16,6 +16,7 @@ const COMPANY_METADATA: Record<string, CompanyMetadata> = {
   "hycu": { type: "Product", employees: "~200-500", rating: 4.7 },
   "bmc software": { type: "Product", employees: "~6,000-7,000", rating: 4.6 },
   "metropolis technologies": { type: "Product", employees: "Employee count unknown", rating: 4.2 },
+  "astreya": { type: "Service Based", employees: "Employee count unknown", rating: 4.0 },
   "ig group": { type: "Product / Fintech", employees: "~2,000+", rating: 4.3 },
   "shuru": { type: "Product / Consumer Platform", employees: "~200-500", rating: 4.0 },
   "innova esi": { type: "Service Based", employees: "~5,000+", rating: 4.0 },
