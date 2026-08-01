@@ -220,7 +220,7 @@ function buildCoverLetter({
     company,
     paragraphs: [
       `Dear Hiring Manager,`,
-      `I am excited to apply for the ${title} role at ${company}. With over 9 years of experience across DevOps, SRE, cloud infrastructure, Kubernetes, Terraform, and CI/CD automation, I can contribute quickly to teams building reliable and scalable platforms.`,
+      `I am excited to apply for the ${title} role at ${company}. With around 10 years of experience across DevOps, SRE, cloud infrastructure, Kubernetes, Terraform, and CI/CD automation, I can contribute quickly to teams building reliable and scalable platforms.`,
       `The role appears to value ${emphasis}. My recent work includes designing production-grade cloud automation, improving release reliability, managing Kubernetes-based platforms, and strengthening observability and deployment practices for business-critical systems.`,
       `I bring hands-on experience with AWS, Azure/GCP-aligned cloud practices, Jenkins, GitHub Actions, Docker, monitoring stacks, and infrastructure as code. I am based in Bengaluru and open to opportunities aligned with ${location}.`,
       `Thank you for considering my application. I would welcome the opportunity to discuss how my platform engineering and automation background can support ${company}'s engineering goals.`,
