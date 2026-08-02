@@ -2,10 +2,20 @@ export type CompanyMetadata = {
   type: string;
   employees: string;
   rating?: number;
-  source?: "curated" | "wikidata" | "inferred";
+  source?: "curated" | "linkedin" | "wikidata" | "inferred";
 };
 
 const COMPANY_METADATA: Record<string, CompanyMetadata> = {
+  "zemoso": { type: "Service Based", employees: "~501-1,000", rating: 4.0 },
+  "zemoso technologies": { type: "Service Based", employees: "~501-1,000", rating: 4.0 },
+  "alexion": { type: "Product / Biopharma", employees: "~1,001-5,000", rating: 3.8 },
+  "alexion pharmaceuticals": { type: "Product / Biopharma", employees: "~1,001-5,000", rating: 3.8 },
+  "infinx": { type: "Service Based / Healthcare", employees: "~5,001-10,000", rating: 4.3 },
+  "infinx healthcare": { type: "Service Based / Healthcare", employees: "~5,001-10,000", rating: 4.3 },
+  "dover": { type: "Product / Industrial Manufacturing", employees: "~24,000+", rating: 3.7 },
+  "dover corporation": { type: "Product / Industrial Manufacturing", employees: "~24,000+", rating: 3.7 },
+  "pfizer": { type: "Product / Biopharma", employees: "~80,000+", rating: 3.7 },
+  "pfizer inc": { type: "Product / Biopharma", employees: "~80,000+", rating: 3.7 },
   "crowdstrike": { type: "Product", employees: "~10,000+", rating: 5.0 },
   "okta": { type: "Product", employees: "~6,000+", rating: 5.0 },
   "morgan stanley": { type: "Banking Technology", employees: "~80,000+", rating: 4.9 },
@@ -64,7 +74,8 @@ const COMPANY_METADATA: Record<string, CompanyMetadata> = {
   "noon": { type: "Product / Ecommerce", employees: "~5,000+", rating: 4.3 },
 };
 
-const dynamicMetadataCache = new Map<string, CompanyMetadata | undefined>();
+const dynamicMetadataCache = new Map<string, CompanyMetadata>();
+const linkedInMetadataCache = new Map<string, CompanyMetadata | null>();
 
 export function getCompanyMetadata(company?: string): CompanyMetadata | undefined {
   const normalized = normalizeCompanyName(company);
@@ -79,10 +90,26 @@ export async function getDynamicCompanyMetadata(company?: string): Promise<Compa
   const curated = getCuratedCompanyMetadata(normalized);
   if (curated) return { ...curated, source: "curated" };
 
-  const wikidata = await getWikidataCompanyMetadata(normalized);
-  if (wikidata) return wikidata;
+  const inferred = inferCompanyMetadata(normalized);
+  const [linkedIn, wikidata] = await Promise.all([
+    getLinkedInCompanyMetadata(normalized),
+    getWikidataCompanyMetadata(normalized),
+  ]);
+  const publicMetadata = wikidata ? mergeCompanyMetadata(wikidata, inferred) : inferred;
 
-  return inferCompanyMetadata(normalized);
+  return linkedIn ? mergeCompanyMetadata(linkedIn, publicMetadata) : publicMetadata;
+}
+
+function mergeCompanyMetadata(primary: CompanyMetadata, fallback: CompanyMetadata): CompanyMetadata {
+  const type = primary.type === "Company type unknown" ? fallback.type : primary.type;
+  const employees = primary.employees === "Employee count unknown" ? fallback.employees : primary.employees;
+
+  return {
+    type,
+    employees,
+    rating: primary.rating ?? fallback.rating ?? estimateRating(type, employees),
+    source: primary.source ?? fallback.source,
+  };
 }
 
 function getCuratedCompanyMetadata(normalizedCompany: string) {
@@ -99,6 +126,103 @@ function normalizeCompanyName(company?: string) {
     .toLowerCase()
     .replace(/\s+/g, " ")
     .trim();
+}
+
+async function getLinkedInCompanyMetadata(normalizedCompany: string): Promise<CompanyMetadata | undefined> {
+  const cached = linkedInMetadataCache.get(normalizedCompany);
+  if (cached !== undefined) return cached ?? undefined;
+
+  const slugs = Array.from(
+    new Set([
+      normalizedCompany.replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+      normalizedCompany
+        .replace(/\b(private|pvt|limited|ltd|incorporated|inc|corporation|corp)\b/g, "")
+        .replace(/&/g, "and")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, ""),
+    ]),
+  ).filter(Boolean);
+
+  for (const slug of slugs) {
+    try {
+      const response = await fetch(`https://www.linkedin.com/company/${slug}`, {
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; JobTrackerCompanyMetadata/1.0)" },
+        next: { revalidate: 60 * 60 * 24 * 14 },
+        signal: AbortSignal.timeout(6000),
+      });
+      if (!response.ok) continue;
+
+      const html = await response.text();
+      const companyName = extractLinkedInText(html, /<h1[^>]*>([\s\S]*?)<\/h1>/i);
+      if (!isLikelySameCompany(normalizedCompany, companyName)) continue;
+
+      const industry =
+        extractLinkedInText(
+          html,
+          /data-test-id="about-us__industry"[\s\S]*?<dd[^>]*>([\s\S]*?)<\/dd>/i,
+        ) ||
+        extractLinkedInText(
+          html,
+          /<h2[^>]*class="[^"]*top-card-layout__headline[^"]*"[^>]*>([\s\S]*?)<\/h2>/i,
+        ) ||
+        decodeHtmlEntities(
+          html.match(
+            /\b(IT Services and IT Consulting|Information Technology (?:&amp;|&) Services|Software Development|Pharmaceutical Manufacturing|Hospitals and Health Care|Financial Services)\b/i,
+          )?.[1] ?? "",
+        );
+      const employeeRange = extractLinkedInText(
+        html,
+        /data-test-id="about-us__size"[\s\S]*?<dd[^>]*>([\s\S]*?)<\/dd>/i,
+      ).replace(/\s+employees?\b/i, "");
+      const type = inferCompanyTypeFromLabels(normalizedCompany, [industry]);
+      const employees = /^\d[\d,]*\s*(?:-|–|to)\s*\d[\d,]*$/i.test(employeeRange)
+        ? `~${employeeRange.replace(/\s*(?:–|to)\s*/i, "-")}`
+        : /^\d[\d,]*\+$/.test(employeeRange)
+          ? `~${employeeRange}`
+          : "Employee count unknown";
+      if (type === "Company type unknown" && employees === "Employee count unknown") continue;
+      const metadata: CompanyMetadata = {
+        type,
+        employees,
+        rating: estimateRating(type, employees),
+        source: "linkedin",
+      };
+      linkedInMetadataCache.set(normalizedCompany, metadata);
+      return metadata;
+    } catch {
+      // Try the next normalized company slug; transient failures are not cached.
+    }
+  }
+
+  linkedInMetadataCache.set(normalizedCompany, null);
+  return undefined;
+}
+
+function extractLinkedInText(html: string, pattern: RegExp) {
+  return decodeHtmlEntities(html.match(pattern)?.[1] ?? "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function decodeHtmlEntities(value: string) {
+  return value
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">");
+}
+
+function isLikelySameCompany(normalizedCompany: string, publicName: string) {
+  const comparable = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/\b(technologies|technology|software|pharmaceuticals|healthcare|private|pvt|limited|ltd|inc)\b/g, "")
+      .replace(/[^a-z0-9]/g, "");
+  const expected = comparable(normalizedCompany);
+  const actual = comparable(publicName);
+  return expected.length >= 3 && actual.length >= 3 && (expected.includes(actual) || actual.includes(expected));
 }
 
 async function getWikidataCompanyMetadata(normalizedCompany: string): Promise<CompanyMetadata | undefined> {
@@ -123,7 +247,6 @@ async function getWikidataCompanyMetadata(normalizedCompany: string): Promise<Co
     };
     const candidates = (searchJson.search ?? []).filter((candidate) => Boolean(candidate.id));
     if (candidates.length === 0) {
-      dynamicMetadataCache.set(normalizedCompany, undefined);
       return undefined;
     }
 
@@ -144,8 +267,8 @@ async function getWikidataCompanyMetadata(normalizedCompany: string): Promise<Co
 
           const employees = formatWikidataEmployees(entity.claims?.P1128?.[0]?.mainsnak?.datavalue?.value?.amount);
           const labels = await getWikidataLabels(getWikidataClaimEntityIds(entity, ["P31", "P452"]));
-          const type = inferCompanyTypeFromLabels(normalizedCompany, labels);
           const description = `${candidate.label ?? ""} ${candidate.description ?? ""}`.toLowerCase();
+          const type = inferCompanyTypeFromLabels(normalizedCompany, [...labels, description]);
           const isCompanyLike =
             labels.some((label) => /\b(company|business|enterprise|corporation|organization|manufacturer)\b/.test(label)) ||
             /\b(company|corporation|manufacturer|technology|software|bank|financial|enterprise|multinational)\b/.test(
@@ -172,14 +295,12 @@ async function getWikidataCompanyMetadata(normalizedCompany: string): Promise<Co
 
     const metadata = metadataCandidates[0]?.metadata;
     if (!metadata) {
-      dynamicMetadataCache.set(normalizedCompany, undefined);
       return undefined;
     }
 
     dynamicMetadataCache.set(normalizedCompany, metadata);
     return metadata;
   } catch {
-    dynamicMetadataCache.set(normalizedCompany, undefined);
     return undefined;
   }
 }
@@ -261,7 +382,7 @@ function inferCompanyTypeFromLabels(normalizedCompany: string, labels: string[])
     return "Banking Technology";
   }
   if (
-    /\b(consulting|information technology consulting|outsourcing|professional services|service provider|it services|managed services|digital transformation|systems integrator)\b/.test(
+    /\b(consulting|information technology(?:\s*&\s*|\s+and\s+)?services|information technology consulting|outsourcing|professional services|service provider|it services|managed services|digital transformation|systems integrator)\b/.test(
       text,
     )
   ) {
@@ -269,6 +390,12 @@ function inferCompanyTypeFromLabels(normalizedCompany: string, labels: string[])
   }
   if (/\b(software company|software|saas|cloud computing|internet company|e-commerce|computer hardware|product company)\b/.test(text)) {
     return "Product";
+  }
+  if (/\b(pharmaceutical|biopharma|biotechnology|medical device|drug manufacturer)\b/.test(text)) {
+    return "Product / Biopharma";
+  }
+  if (/\b(healthcare services|health care services|revenue cycle|medical billing|outsourced operations)\b/.test(text)) {
+    return "Service Based / Healthcare";
   }
   return inferCompanyMetadata(normalizedCompany).type;
 }
@@ -297,5 +424,14 @@ function inferCompanyMetadata(normalizedCompany: string): CompanyMetadata {
     return { type: "Service Based", employees: "Employee count unknown", rating: 4.0, source: "inferred" };
   }
 
-  return { type: "Company type unknown", employees: "Employee count unknown", source: "inferred" };
+  if (/\b(pharma|pharmaceutical|biopharma|biotech|therapeutics|medical devices?)\b/.test(normalizedCompany)) {
+    return {
+      type: "Product / Biopharma",
+      employees: "Employee count unknown",
+      rating: 4.1,
+      source: "inferred",
+    };
+  }
+
+  return { type: "Company type unknown", employees: "Employee count unknown", rating: 4.0, source: "inferred" };
 }

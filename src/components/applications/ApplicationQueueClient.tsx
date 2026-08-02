@@ -563,7 +563,8 @@ function ApplicationRow({
                 </span>
                 {typeof companyMetadata.rating === "number" && (
                   <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700 ring-1 ring-amber-200">
-                    Rating {companyMetadata.rating.toFixed(1)}
+                    {companyMetadata.source && companyMetadata.source !== "curated" ? "Est. Rating" : "Rating"}{" "}
+                    {companyMetadata.rating.toFixed(1)}
                   </span>
                 )}
                 <span className="rounded-full bg-slate-50 px-2.5 py-1 ring-1 ring-slate-200">

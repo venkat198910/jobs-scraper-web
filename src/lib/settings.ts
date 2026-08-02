@@ -7,7 +7,9 @@ export type SettingKey =
   | "easyApplyOnly"
   | "companyPortals"
   | "autoGenerateResume"
-  | "strictExperience";
+  | "strictExperience"
+  | "applicationProfileEnabled"
+  | "autoAnswersEnabled";
 
 export type SettingsState = {
   locations: string[];
@@ -304,6 +306,8 @@ export const defaultSettings: SettingsState = {
     companyPortals: true,
     autoGenerateResume: true,
     strictExperience: true,
+    applicationProfileEnabled: true,
+    autoAnswersEnabled: true,
   },
 };
 

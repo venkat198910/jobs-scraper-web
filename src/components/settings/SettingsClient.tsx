@@ -342,8 +342,13 @@ export default function SettingsClient() {
       </section>
 
       <section className="mt-4 rounded-lg border border-slate-200 bg-white shadow-sm">
-        <SectionHeader icon={<Contact className="h-5 w-5" />} title="Application Profile" />
-        <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-3">
+        <SectionHeader
+          icon={<Contact className="h-5 w-5" />}
+          title="Application Profile"
+          enabled={settings.toggles.applicationProfileEnabled}
+          onToggle={() => setToggle("applicationProfileEnabled")}
+        />
+        <div className={`grid grid-cols-1 gap-4 p-5 md:grid-cols-3 ${settings.toggles.applicationProfileEnabled ? "" : "pointer-events-none opacity-50"}`}>
           <TextField label="First Name" value={settings.applicationProfile.firstName} onChange={(value) => setProfile("firstName", value)} />
           <TextField label="Last Name" value={settings.applicationProfile.lastName} onChange={(value) => setProfile("lastName", value)} />
           <TextField label="Full Name" value={settings.applicationProfile.fullName} onChange={(value) => setProfile("fullName", value)} />
@@ -412,8 +417,13 @@ export default function SettingsClient() {
       </section>
 
       <section className="mt-4 rounded-lg border border-slate-200 bg-white shadow-sm">
-        <SectionHeader icon={<Check className="h-5 w-5" />} title="Auto Answers" />
-        <div className="space-y-6 p-5">
+        <SectionHeader
+          icon={<Check className="h-5 w-5" />}
+          title="Auto Answers"
+          enabled={settings.toggles.autoAnswersEnabled}
+          onToggle={() => setToggle("autoAnswersEnabled")}
+        />
+        <div className={`space-y-6 p-5 ${settings.toggles.autoAnswersEnabled ? "" : "pointer-events-none opacity-50"}`}>
           <div>
             <h3 className="mb-3 text-sm font-semibold text-slate-900">Candidate Details</h3>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -530,11 +540,35 @@ function TextField({
   );
 }
 
-function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
+function SectionHeader({
+  icon,
+  title,
+  enabled,
+  onToggle,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  enabled?: boolean;
+  onToggle?: () => void;
+}) {
   return (
-    <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4">
-      <span className="text-slate-600">{icon}</span>
-      <h2 className="text-base font-semibold text-slate-950">{title}</h2>
+    <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+      <div className="flex items-center gap-2">
+        <span className="text-slate-600">{icon}</span>
+        <h2 className="text-base font-semibold text-slate-950">{title}</h2>
+      </div>
+      {onToggle && typeof enabled === "boolean" && (
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex items-center gap-2 text-sm font-medium text-slate-700"
+          aria-label={`${enabled ? "Disable" : "Enable"} ${title}`}
+          aria-pressed={enabled}
+        >
+          <span>{enabled ? "Enabled" : "Disabled"}</span>
+          <Switch checked={enabled} />
+        </button>
+      )}
     </div>
   );
 }
