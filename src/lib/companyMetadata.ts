@@ -72,6 +72,8 @@ const COMPANY_METADATA: Record<string, CompanyMetadata> = {
   "adcb": { type: "Banking Technology", employees: "~5,000+", rating: 4.4 },
   "mashreq": { type: "Banking Technology", employees: "~5,000+", rating: 4.4 },
   "noon": { type: "Product / Ecommerce", employees: "~5,000+", rating: 4.3 },
+  "motivity labs": { type: "Service Based", employees: "~201-500", rating: 4.0 },
+  "motivity labs inc": { type: "Service Based", employees: "~201-500", rating: 4.0 },
 };
 
 const dynamicMetadataCache = new Map<string, CompanyMetadata>();
@@ -79,13 +81,13 @@ const linkedInMetadataCache = new Map<string, CompanyMetadata | null>();
 
 export function getCompanyMetadata(company?: string): CompanyMetadata | undefined {
   const normalized = normalizeCompanyName(company);
-  if (!normalized) return undefined;
+  if (!normalized || isAnonymousCompanyName(normalized)) return undefined;
   return getCuratedCompanyMetadata(normalized) ?? inferCompanyMetadata(normalized);
 }
 
 export async function getDynamicCompanyMetadata(company?: string): Promise<CompanyMetadata | undefined> {
   const normalized = normalizeCompanyName(company);
-  if (!normalized) return undefined;
+  if (!normalized || isAnonymousCompanyName(normalized)) return undefined;
 
   const curated = getCuratedCompanyMetadata(normalized);
   if (curated) return { ...curated, source: "curated" };
@@ -98,6 +100,13 @@ export async function getDynamicCompanyMetadata(company?: string): Promise<Compa
   const publicMetadata = wikidata ? mergeCompanyMetadata(wikidata, inferred) : inferred;
 
   return linkedIn ? mergeCompanyMetadata(linkedIn, publicMetadata) : publicMetadata;
+}
+
+export function isAnonymousCompanyName(company?: string) {
+  const normalized = normalizeCompanyName(company);
+  return /^(?:confidential|company confidential|confidential company|undisclosed|stealth(?: company)?|unknown company)$/i.test(
+    normalized,
+  );
 }
 
 function mergeCompanyMetadata(primary: CompanyMetadata, fallback: CompanyMetadata): CompanyMetadata {

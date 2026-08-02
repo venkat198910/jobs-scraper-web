@@ -12,7 +12,7 @@ import {
   RefreshCw,
   Trash2,
 } from "lucide-react";
-import { getCompanyMetadata } from "@/lib/companyMetadata";
+import { getCompanyMetadata, isAnonymousCompanyName } from "@/lib/companyMetadata";
 import type { CompanyMetadata } from "@/lib/companyMetadata";
 import { normalizeQuestionKey, normalizeSettings } from "@/lib/settings";
 
@@ -556,7 +556,11 @@ function ApplicationRow({
             )}
           </div>
           <div className="mt-2 flex flex-wrap gap-2 text-xs font-medium text-slate-600">
-            {companyMetadata ? (
+            {isAnonymousCompanyName(company) ? (
+              <span className="rounded-full bg-slate-50 px-2.5 py-1 text-slate-500 ring-1 ring-slate-200">
+                Company confidential
+              </span>
+            ) : companyMetadata ? (
               <>
                 <span className="rounded-full bg-sky-50 px-2.5 py-1 text-sky-700 ring-1 ring-sky-200">
                   {companyMetadata.type}
