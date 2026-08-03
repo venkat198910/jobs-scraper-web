@@ -80,6 +80,30 @@ const dynamicMetadataCache = new Map<string, CompanyMetadata>();
 const linkedInMetadataCache = new Map<string, CompanyMetadata | null>();
 const LINKEDIN_COMPANY_SLUG_OVERRIDES: Record<string, string[]> = {
   invesco: ["invesco-ltd"],
+  "mr cooper / rocket india": ["rocket-companies", "mr-cooper"],
+  "ntt ltd": ["ntt-ltd"],
+  "7-eleven global solution center india": ["7-eleven-global-solution-center-india"],
+  "blend labs": ["blend-", "india-blend"],
+  "giant eagle gcc": ["giant-eagle-gcc"],
+  "takeda innovation capability center": ["takeda-pharmaceuticals"],
+  "tresvista analytics": ["tresvista"],
+};
+const COMPANY_TYPE_OVERRIDES: Record<string, string> = {
+  "mr cooper / rocket india": "Product / Financial Services",
+  kyndryl: "Service Based",
+  "ntt ltd": "Service Based",
+  "7-eleven global solution center india": "Product / Retail GCC",
+  synechron: "Service Based",
+  "blend labs": "Product / Fintech",
+  "giant eagle gcc": "Product / Retail GCC",
+  infosys: "Service Based",
+  "infosys ltd": "Service Based",
+  signify: "Product / Electronics",
+  "signify innovations": "Product / Electronics",
+  ecolab: "Product / Industrial Technology",
+  "ecolab global services": "Product / Industrial Technology",
+  "takeda innovation capability center": "Product / Biopharma",
+  "tresvista analytics": "Service Based / Financial Analytics",
 };
 
 export function getCompanyMetadata(company?: string): CompanyMetadata | undefined {
@@ -391,6 +415,8 @@ function formatWikidataEmployees(amount?: string) {
 
 function inferCompanyTypeFromLabels(normalizedCompany: string, labels: string[]) {
   const text = `${normalizedCompany} ${labels.join(" ")}`.toLowerCase();
+  const typeOverride = COMPANY_TYPE_OVERRIDES[normalizedCompany];
+  if (typeOverride) return typeOverride;
   if (normalizedCompany === "invesco" || /\b(asset management|investment management)\b/.test(text)) {
     return "Financial Services / Asset Management";
   }
