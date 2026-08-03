@@ -78,6 +78,9 @@ const COMPANY_METADATA: Record<string, CompanyMetadata> = {
 
 const dynamicMetadataCache = new Map<string, CompanyMetadata>();
 const linkedInMetadataCache = new Map<string, CompanyMetadata | null>();
+const LINKEDIN_COMPANY_SLUG_OVERRIDES: Record<string, string[]> = {
+  invesco: ["invesco-ltd"],
+};
 
 export function getCompanyMetadata(company?: string): CompanyMetadata | undefined {
   const normalized = normalizeCompanyName(company);
@@ -143,6 +146,7 @@ async function getLinkedInCompanyMetadata(normalizedCompany: string): Promise<Co
 
   const slugs = Array.from(
     new Set([
+      ...(LINKEDIN_COMPANY_SLUG_OVERRIDES[normalizedCompany] ?? []),
       normalizedCompany.replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
       normalizedCompany
         .replace(/\b(private|pvt|limited|ltd|incorporated|inc|corporation|corp)\b/g, "")
@@ -386,7 +390,10 @@ function formatWikidataEmployees(amount?: string) {
 }
 
 function inferCompanyTypeFromLabels(normalizedCompany: string, labels: string[]) {
-  const text = `${normalizedCompany} ${labels.join(" ")}`;
+  const text = `${normalizedCompany} ${labels.join(" ")}`.toLowerCase();
+  if (normalizedCompany === "invesco" || /\b(asset management|investment management)\b/.test(text)) {
+    return "Financial Services / Asset Management";
+  }
   if (/\b(bank|banking|financial services|investment|securities|fintech|payments)\b/.test(text)) {
     return "Banking Technology";
   }
@@ -402,6 +409,9 @@ function inferCompanyTypeFromLabels(normalizedCompany: string, labels: string[])
   }
   if (/\b(pharmaceutical|biopharma|biotechnology|medical device|drug manufacturer)\b/.test(text)) {
     return "Product / Biopharma";
+  }
+  if (/\b(machinery manufacturing|industrial manufacturing|equipment manufacturer)\b/.test(text)) {
+    return "Product / Industrial Manufacturing";
   }
   if (/\b(healthcare services|health care services|revenue cycle|medical billing|outsourced operations)\b/.test(text)) {
     return "Service Based / Healthcare";
