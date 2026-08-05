@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Resume,
   Education,
@@ -46,6 +47,10 @@ export function ResumeFormFields({
   addArrayItem,
   removeArrayItem,
 }: ResumeFormProps) {
+  const [skillsText, setSkillsText] = useState(
+    Array.isArray(formData.skills) ? formData.skills.join(", ") : "",
+  );
+
   return (
     <>
       {/* Personal Info */}
@@ -126,19 +131,19 @@ export function ResumeFormFields({
         <FormField
           label="Skills"
           id="edit-skills"
-          value={
-            Array.isArray(formData.skills) ? formData.skills.join(", ") : ""
-          }
-          onChange={(e) =>
+          value={skillsText}
+          onChange={(event) => {
+            const value = event.target.value;
+            setSkillsText(value);
             updateField(
               "skills",
-              e.target.value
+              value
                 .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean)
-            )
-          }
-          rows={3}
+                .map((skill) => skill.trim())
+                .filter(Boolean),
+            );
+          }}
+          rows={6}
           placeholder="JavaScript, Python, React, ..."
         />
       </SectionCard>

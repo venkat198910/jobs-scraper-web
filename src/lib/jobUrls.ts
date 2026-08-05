@@ -2,6 +2,10 @@ import { Job } from "@/types";
 
 const KNOWN_DIRECT_JOB_URLS = new Map([
   [
+    "nvidia|senior site reliability engineering storage",
+    "https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/Senior-Site-Reliability-Engineering---Storage_JR2018610",
+  ],
+  [
     "synopsys|senior staff site reliability engineer",
     "https://synopsys.avature.net/careers/Login?formValues=&jobId=17592&source=&tags=&user=",
   ],
