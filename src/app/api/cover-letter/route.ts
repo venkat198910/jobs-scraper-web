@@ -189,11 +189,12 @@ function buildCoverLetter({
     asString(resume?.linkedin_url) ??
     "https://www.linkedin.com/in/venkateswarlu-derangula/";
 
-  const title =
+  const rawTitle =
     asString(job?.title) ??
     asString(job?.job_title) ??
     asString(notes.job_title) ??
     "the advertised role";
+  const title = cleanRoleTitle(rawTitle);
   const company =
     asString(job?.company) ??
     asString(job?.company_name) ??
@@ -228,6 +229,19 @@ function buildCoverLetter({
       candidateName,
     ],
   };
+}
+
+function cleanRoleTitle(value: string) {
+  const withoutRequirements = value
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\[[^\]]*\]/g, " ")
+    .replace(/\s+with\s+.+?\bexperience\b.*$/i, " ")
+    .replace(/\s+[-–—|]\s+.*$/, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[\s,:;|\-–—]+$/, "");
+
+  return withoutRequirements || "the advertised role";
 }
 
 async function renderCoverLetterPdf(letter: ReturnType<typeof buildCoverLetter>) {
