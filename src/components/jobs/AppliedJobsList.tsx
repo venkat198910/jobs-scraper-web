@@ -124,6 +124,7 @@ export default function AppliedJobsList({
       year: "numeric",
       month: "short",
       day: "numeric",
+      timeZone: "Asia/Kolkata",
     });
   };
 
