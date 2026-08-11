@@ -6,6 +6,17 @@ export type CompanyMetadata = {
 };
 
 const COMPANY_METADATA: Record<string, CompanyMetadata> = {
+  "tcs": { type: "Service Based", employees: "~593,000+", rating: 4.0 },
+  "tata consultancy services": { type: "Service Based", employees: "~593,000+", rating: 4.0 },
+  "tata consultancy services ltd": { type: "Service Based", employees: "~593,000+", rating: 4.0 },
+  "tech mahindra": { type: "Service Based", employees: "~146,000+", rating: 4.0 },
+  "tech mahindra limited": { type: "Service Based", employees: "~146,000+", rating: 4.0 },
+  "hcltech": { type: "Service Based", employees: "~223,000+", rating: 4.0 },
+  "hcl technologies": { type: "Service Based", employees: "~223,000+", rating: 4.0 },
+  "hcl technologies limited": { type: "Service Based", employees: "~223,000+", rating: 4.0 },
+  "cognizant": { type: "Service Based", employees: "~357,600+", rating: 4.0 },
+  "cognizant technology solutions": { type: "Service Based", employees: "~357,600+", rating: 4.0 },
+  "cognizant technology solutions india": { type: "Service Based", employees: "~357,600+", rating: 4.0 },
   "zemoso": { type: "Service Based", employees: "~501-1,000", rating: 4.0 },
   "zemoso technologies": { type: "Service Based", employees: "~501-1,000", rating: 4.0 },
   "alexion": { type: "Product / Biopharma", employees: "~1,001-5,000", rating: 3.8 },
@@ -79,6 +90,13 @@ const COMPANY_METADATA: Record<string, CompanyMetadata> = {
 const dynamicMetadataCache = new Map<string, CompanyMetadata>();
 const linkedInMetadataCache = new Map<string, CompanyMetadata | null>();
 const LINKEDIN_COMPANY_SLUG_OVERRIDES: Record<string, string[]> = {
+  tcs: ["tata-consultancy-services"],
+  "tata consultancy services": ["tata-consultancy-services"],
+  "tech mahindra": ["tech-mahindra"],
+  hcltech: ["hcltech"],
+  "hcl technologies": ["hcltech"],
+  cognizant: ["cognizant"],
+  "cognizant technology solutions": ["cognizant"],
   invesco: ["invesco-ltd"],
   "mr cooper / rocket india": ["rocket-companies", "mr-cooper"],
   "ntt ltd": ["ntt-ltd"],
